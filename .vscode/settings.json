@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "192.168.8.101",
+            "port": 6001,
+            "driver": "PostgreSQL",
+            "name": "docker",
+            "username": "postgres",
+            "password": "myadmin",
+            "database": "postgres"
+        }
+    ]
+}
