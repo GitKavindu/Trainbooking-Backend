@@ -1,0 +1,27 @@
+#ignore bin and obj in TrainApi
+TrainApi/bin
+TrainApi/obj
+
+#ignore bin and obj in Infrastructure
+Infrastructure/bin
+Infrastructure/obj
+
+#ignore bin and obj in Service
+Service/bin
+Service/obj
+
+#ignore bin and obj in Models
+Models/bin
+Models/obj
+
+#ignore bin and obj Interfaces
+Interfaces/bin
+Interfaces/obj
+
+#ignore .vscode in Sql
+Sql/.vscode
+
+
+
+
+
