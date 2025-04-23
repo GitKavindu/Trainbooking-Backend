@@ -66,13 +66,13 @@ public class AdminController: ControllerBase
       return responseModel;
     }
 
-    // [HttpGet("GetUserStatus/{username}")] 
-    // public async Task<ResponseModel> getUserStatus(string username)
-    // {
-    //   ResponseModel responseModel=await _adminService.EnableUser(appointAdmin);  
+    [HttpGet("GetUserStatus/{username}")] 
+    public async Task<ResponseModel> getUserStatus(string username)
+    {
+      ResponseModel responseModel=await _adminService.GetUserStatus(username);  
 
-    //   HttpContext.Response.StatusCode = responseModel.ErrCode;
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
 
-    //   return responseModel;
-    // } 
+      return responseModel;
+    } 
 }

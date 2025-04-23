@@ -211,6 +211,47 @@ public class AdminDbRepo:IAdminDbRepo
     }
   } 
 
-  
+  public async Task<ResponseModelTyped<bool>> GetUserStatus(string username)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para = new DynamicParameters();
+          para.Add("_username",username); 
+          
+          // Call the function with the parameters and retrieve the results
+          bool isAdmin=await con.QueryFirstAsync<bool>($"SELECT is_admin FROM users WHERE username=@_username;",para, commandType: CommandType.Text);
+
+          // Return the result
+          return new ResponseModelTyped<bool>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data =isAdmin
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<bool>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<bool>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }
   
 }
