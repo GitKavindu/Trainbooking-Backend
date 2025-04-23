@@ -10,6 +10,6 @@ public interface IAdminDbRepo
   Task<ResponseModelTyped<string>> DisableAdmin(string username);
   Task<ResponseModelTyped<string>> EnableDisableUser(string username,bool Isenable);
 
-
+  Task<ResponseModelTyped<bool>> GetUserStatus(string username);
 
 }

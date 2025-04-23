@@ -9,6 +9,6 @@ public interface IAdminService
   Task<ResponseModel> DisableUser(AppointAdmin appointAdmin);
   Task<ResponseModel> EnableUser(AppointAdmin appointAdmin);
 
-
+  Task<ResponseModel> GetUserStatus(string username);
 
 }

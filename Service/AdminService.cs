@@ -210,5 +210,11 @@ public class AdminService:IAdminService
     
   }
 
+  public async Task<ResponseModel> GetUserStatus(string username)
+  {
+    ResponseModelTyped<bool> res=await _adminDbRepo.GetUserStatus(username);
+
+    return new ModdelMapper().ResponseToFormalResponse<bool>(res);
+  }
 }
 
