@@ -19,7 +19,7 @@ BEGIN
 			--disable all stations for this id
 			UPDATE station 
 			SET is_active=false
-			WHERE station_id=_station_id;
+			WHERE station_id=_station_id AND is_active=true;
 			
 			IF _is_active THEN
 				--update station
