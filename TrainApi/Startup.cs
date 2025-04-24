@@ -67,12 +67,13 @@ namespace TrainBookingSystem.TrainApi
             services.AddScoped<IUserDbRepo,UserDbRepo>(); 
             services.AddScoped<IAdminDbRepo,AdminDbRepo>();
             services.AddScoped<IStationDbRepo,StationDbRepo>();
+            services.AddScoped<ITrainDbRepo,TrainDbRepo>();
 
             //Service dependecies
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<IAdminService,AdminService>();
             services.AddScoped<IStationService,StationService>();
-            
+            services.AddScoped<ITrainService,TrainService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
