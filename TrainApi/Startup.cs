@@ -66,11 +66,12 @@ namespace TrainBookingSystem.TrainApi
             services.AddScoped<IDbConnectRepo>((c)=> new DbConnectRepo(_connectionString));
             services.AddScoped<IUserDbRepo,UserDbRepo>(); 
             services.AddScoped<IAdminDbRepo,AdminDbRepo>();
+            services.AddScoped<IStationDbRepo,StationDbRepo>();
 
             //Service dependecies
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<IAdminService,AdminService>();
-
+            services.AddScoped<IStationService,StationService>();
             
         }
 
