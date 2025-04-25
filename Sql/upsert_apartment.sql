@@ -5,7 +5,8 @@ CREATE OR REPLACE PROCEDURE public.upsert_apartment(
 	_train_id int,
 	_train_seq_no int,
 	_is_active bool,
-	_added_by VARCHAR(50)
+	_added_by VARCHAR(50),
+	OUT _result integer
 )
 LANGUAGE 'plpgsql'
 AS $BODY$
@@ -14,6 +15,7 @@ DECLARE
 	v_created_date TIMESTAMP;
 	v_max_seq_no INT;
 BEGIN
+	_result='5';
 	IF _is_update THEN
 		--select 1 for given apartment id to check it exists
 		IF EXISTS (SELECT 1 FROM apartments WHERE apartment_id=_apartment_id AND is_active=true) THEN
@@ -39,7 +41,8 @@ BEGIN
 				
 				--update apartment
 				INSERT INTO apartments (class,added_by,added_date,modified_date,is_active,train_seq_no,train_id,updated_from)
-				VALUES (_class,_added_by,v_created_date,(SELECT CURRENT_TIMESTAMP),true,_train_seq_no,_train_id,_apartment_id);
+				VALUES (_class,_added_by,v_created_date,(SELECT CURRENT_TIMESTAMP),true,_train_seq_no,_train_id,_apartment_id)
+				RETURNING apartment_id INTO _result;
 				
 			ELSE
 				--disable apartment
@@ -53,7 +56,8 @@ BEGIN
 	ELSE
 		--Add a new apartment
 		INSERT INTO apartments (class,added_by,added_date,modified_date,is_active,train_seq_no,train_id,updated_from)
-		VALUES (_class,_added_by,(SELECT CURRENT_TIMESTAMP),null,true,null,null,null);
+		VALUES (_class,_added_by,(SELECT CURRENT_TIMESTAMP),null,true,null,null,null)
+		RETURNING apartment_id INTO _result;
 	END IF;
 END;
 $BODY$;
