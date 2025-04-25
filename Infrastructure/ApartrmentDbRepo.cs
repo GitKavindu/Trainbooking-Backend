@@ -1,0 +1,130 @@
+using Interfaces;
+using Models;
+using Npgsql;
+using System.Data;
+using Dapper;
+using Models.Dtos;
+
+namespace Infrastructure;
+
+
+public class ApartmentDbRepo:IApartmentDbRepo
+{
+  private IDbConnectRepo _dbConnectRepo;
+    
+  public ApartmentDbRepo(IDbConnectRepo dbConnectRepo)
+  {
+    _dbConnectRepo=dbConnectRepo;
+    
+  }
+
+  public async Task<ResponseModelTyped<string>> UpsertApartment
+  (
+    bool isUpdate, int apartmentId, string apartmentClass, int trainId, int trainSeqNo, bool isActive, string username, SeatModel[] seatModel
+  )
+  {
+    using(var con=new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        // Start a transaction
+        using (var transaction = con.BeginTransaction())
+        {
+            try
+            {
+                DynamicParameters para=new DynamicParameters();
+
+                para.Add("_is_update",isUpdate);
+                para.Add("_apartment_id",apartmentId);
+                para.Add("_class",apartmentClass);
+                para.Add("_train_id",trainId);
+                para.Add("_train_seq_no",trainSeqNo);
+                para.Add("_is_active",isActive);
+                para.Add("_added_by",username);
+                // OUT parameter
+                para.Add("_result", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+                var results=await con.ExecuteAsync
+                (   "CALL public.upsert_apartment(@_is_update,@_apartment_id,@_class,@_train_id,@_train_seq_no,@_is_active,@_added_by,NULL)",
+                    para, commandType: CommandType.Text
+                );
+
+                // Get OUT parameter value for Added_apartmentId
+                int Added_apartmentId= para.Get<int>("_result");
+                
+
+                if(seatModel is not null)
+                {
+                    results=results+( await insertSeats(seatModel,Added_apartmentId,con) ).Data;
+                }
+
+                transaction.Commit();
+                
+                return new ResponseModelTyped<string>()
+                {
+                    Success=true,
+                    ErrCode=200,
+                    Data="Operation successful"
+                };
+            }
+            catch(NpgsqlException ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine(ex);
+                return new ResponseModelTyped<string>()
+                {
+                    Success=false,
+                    ErrCode=500,
+                    Data="Database error!"
+                };
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+                transaction.Rollback();
+                return new ResponseModelTyped<string>()
+                {
+                    Success=false,
+                    ErrCode=500,
+                    Data="Something went wrong!"
+                };
+            }
+        }
+
+    }
+  }
+
+  private async Task<ResponseModelTyped<int>> insertSeats(SeatModel []seatModels,int apartmentId,NpgsqlConnection con)
+  {
+     
+    DynamicParameters para=new DynamicParameters();
+    string sql=$"INSERT INTO seat(is_Left,row_no,seq_no,apartment_id) VALUES ";
+
+    for(int i=0;i<seatModels.Length;i++)
+    {
+        sql=sql+$"(@is_Left{i},@row_no{i},@seq_no{i},@apartment_id{i})";
+
+        if(i==seatModels.Length-1)
+        {
+            sql=sql+";";
+        }
+        else
+        {
+            sql=sql+",";
+        }
+
+        para.Add($"is_Left{i}",seatModels[i].isLeft);
+        para.Add($"row_no{i}",seatModels[i].rowNo);
+        para.Add($"seq_no{i}",seatModels[i].seqNo);
+        para.Add($"apartment_id{i}",apartmentId);
+    }
+    Console.WriteLine("sql "+sql);
+    int results=await con.ExecuteAsync(sql,para, commandType: CommandType.Text);
+
+    return new ResponseModelTyped<int>()
+    {
+        Success=true,
+        ErrCode=200,
+        Data=results
+    };    
+  }
+}
