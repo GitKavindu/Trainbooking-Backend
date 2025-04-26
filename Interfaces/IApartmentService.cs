@@ -8,5 +8,5 @@ public interface IApartmentService
   Task<ResponseModel> AddApartment(AddApartmentDto ApartmentDto);
   Task<ResponseModel> UpdateApartment(AddApartmentDto ApartmentDto);
   Task<ResponseModel> DeleteApartment(AddApartmentDto ApartmentDto);
-  //Task<ResponseModel> GetApartments();
+  Task<ResponseModel> GetApartmentsForTrain(int trainId,int seqNo);
 }

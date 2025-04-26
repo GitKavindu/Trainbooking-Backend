@@ -13,10 +13,10 @@ public class ApartmentService:IApartmentService
     _ApartmentDbRepo=ApartmentDbRepo;
   }
  
-//   public async Task<ResponseModel> GetApartments()
-//   {
-//     return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnApartmentDto>>(await _ApartmentDbRepo.selectAllApartments());
-//   }
+  public async Task<ResponseModel> GetApartmentsForTrain(int trainId,int seqNo)
+  {
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnApartmentDto>>(await _ApartmentDbRepo.selectAllApartmentsForTrain(trainId,seqNo));
+  }
 //bool isUpdate, int apartmentId, string apartmentClass, int trainId, int trainSeqNo, bool isActive, string username, SeatModel[] seatModel
   public async Task<ResponseModel> AddApartment(AddApartmentDto ApartmentDto)
   {

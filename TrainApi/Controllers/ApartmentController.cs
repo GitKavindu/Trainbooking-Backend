@@ -20,15 +20,15 @@ public class ApartmentController: ControllerBase
        _ApartmentService=ApartmentService;
     }
 
-    // [HttpGet("getAllApartments")] 
-    // public async Task<ResponseModel> GetAllApartments()
-    // {
-    //   ResponseModel responseModel=await _ApartmentService.GetApartments();  
+    [HttpGet("getAllApartmentsForTrain")] 
+    public async Task<ResponseModel> getAllApartmentsForTrain(int trainId,int seqNo)
+    {
+      ResponseModel responseModel=await _ApartmentService.GetApartmentsForTrain(trainId,seqNo);  
 
-    //   HttpContext.Response.StatusCode = responseModel.ErrCode;
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
 
-    //   return responseModel;
-    // } 
+      return responseModel;
+    } 
 
     [HttpDelete("deleteApartment")] 
     public async Task<ResponseModel> DeleteApartment(AddApartmentDto ApartmentDto)

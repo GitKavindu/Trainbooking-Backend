@@ -4,7 +4,7 @@ using Npgsql;
 using System.Data;
 using Dapper;
 using Models.Dtos;
-
+using System.Linq;
 namespace Infrastructure;
 
 
@@ -17,7 +17,56 @@ public class ApartmentDbRepo:IApartmentDbRepo
     _dbConnectRepo=dbConnectRepo;
     
   }
+  public async Task<ResponseModelTyped<IEnumerable<ReturnApartmentDto>>> selectAllApartmentsForTrain(int trainId,int seqNo)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          // Call the function with the parameters and retrieve the results
+          IEnumerable<ReturnApartmentDto> apartment=await con.QueryAsync<ReturnApartmentDto>(
+            $"SELECT Apartment_id,class AS ApartmrntClass,added_by,TO_CHAR(added_date, 'YYYY-MM-DD') AS created_date,TO_CHAR(modified_date, 'YYYY-MM-DD') AS lastUpdated_date FROM apartments WHERE is_active=true and train_id={trainId} and train_seq_no={seqNo}"
+            , commandType: CommandType.Text);
 
+          foreach(var i in apartment)
+          {
+            IEnumerable<SeatModel> seats=await con.QueryAsync<SeatModel>(
+            $"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo FROM seat WHERE apartment_id={i.Apartment_id}"
+            , commandType: CommandType.Text);
+
+            i.seatModel=seats.ToArray();
+          }
+          //apartment.
+          // Return the result
+          return new ResponseModelTyped<IEnumerable<ReturnApartmentDto>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = apartment
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            return new ResponseModelTyped<IEnumerable<ReturnApartmentDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<ReturnApartmentDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }
+  
   public async Task<ResponseModelTyped<string>> UpsertApartment
   (
     bool isUpdate, int apartmentId, string apartmentClass, int trainId, int trainSeqNo, bool isActive, string username, SeatModel[] seatModel
