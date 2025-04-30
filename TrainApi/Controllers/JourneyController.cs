@@ -40,4 +40,22 @@ public class JourneyController: ControllerBase
       return responseModel;
     } 
 
+    [HttpPut("updateJourney")] 
+    public async Task<ResponseModel> UpdateJourney([FromBody] AddJourneyDto JourneyDto) 
+    {
+      ResponseModel responseModel=await _JourneyService.UpdateJourney(JourneyDto.scheduleId,JourneyDto);
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    }
+    
+    [HttpDelete("deleteJourney/{scheduleId}")] 
+    public async Task<ResponseModel> DeleteJourney(int scheduleId,[FromBody] disableTokenModel token)
+    {
+      ResponseModel responseModel=await _JourneyService.DeleteJourney(scheduleId,token.tokenId);
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    }
+
 }

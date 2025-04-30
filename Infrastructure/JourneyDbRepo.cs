@@ -109,6 +109,59 @@ public class JourneyDbRepo:IJourneyDbRepo
     }
   }
   
+  public async Task<ResponseModelTyped<string>> UpdateJourney(int scheduleId,AddJourneyDto addJourneyDto,string username)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        using (var transaction = con.BeginTransaction())
+        {
+          try
+          {
+            
+            DynamicParameters para=new DynamicParameters();
+            para.Add("schedule_id",scheduleId);
+            
+            string sql=$"UPDATE journey SET is_active=false WHERE schedule_id=@schedule_id";
+            await con.ExecuteAsync(sql,para, commandType: CommandType.Text);
+
+            ResponseModelTyped<int> results=await insertJourney(addJourneyDto.addJourneyStationDto,scheduleId,username,addJourneyDto.trainId,addJourneyDto.trainSeqNo,con);
+
+            transaction.Commit();
+
+            // Return the result
+            return new ResponseModelTyped<string>()
+            {
+                Success = true,
+                ErrCode = 200,
+                Data = results.Data.ToString()
+            };
+            
+          }
+          catch (NpgsqlException ex)
+          {
+              Console.WriteLine(ex);
+              transaction.Rollback();
+              return new ResponseModelTyped<string>()
+              {
+                  Success = false,
+                  ErrCode = 500
+              };
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine(ex); 
+            transaction.Rollback(); 
+            return new ResponseModelTyped<string>()
+              {
+                  Success = false,
+                  ErrCode = 500
+              };
+          }
+        }  
+    }
+  }
+
   private async Task<ResponseModelTyped<int>> insertJourney(
     AddJourneyStationDto []addJourneyStationDto,int scheduleId,string username,int trainId,int JourneyeqNo,NpgsqlConnection con)
   {
@@ -148,4 +201,52 @@ public class JourneyDbRepo:IJourneyDbRepo
         Data=results
     };    
   }
+
+  public async Task<ResponseModelTyped<string>> DeleteJourney(int scheduleId)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        
+          try
+          {
+            
+            DynamicParameters para=new DynamicParameters();
+            para.Add("schedule_id",scheduleId);
+            
+            string sql=$"UPDATE journey SET is_active=false WHERE schedule_id=@schedule_id AND is_active=true";
+            int results=await con.ExecuteAsync(sql,para, commandType: CommandType.Text);
+
+            // Return the result
+            return new ResponseModelTyped<string>()
+            {
+                Success = true,
+                ErrCode = 200,
+                Data = results.ToString()
+            };
+            
+          }
+          catch (NpgsqlException ex)
+          {
+              Console.WriteLine(ex);
+              
+              return new ResponseModelTyped<string>()
+              {
+                  Success = false,
+                  ErrCode = 500
+              };
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine(ex); 
+           
+            return new ResponseModelTyped<string>()
+              {
+                  Success = false,
+                  ErrCode = 500
+              };
+          }
+        }  
+    }
+  
 }

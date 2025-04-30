@@ -65,5 +65,95 @@ public class JourneyService:IJourneyService
     }
   
   }
+
+  public async Task<ResponseModel> UpdateJourney(int scheduleId,AddJourneyDto JourneyDto)
+  {
+    //First check the authentication 
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(JourneyDto.tokenId);
+
+    if(res.Success ==true && res.Data.is_token_valid)
+    {
+      if(res.Data.is_user_admin==true && res.Data.is_token_valid && res.Data.is_user_active)
+      {
+        ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
+        (
+            await _JourneyDbRepo.UpdateJourney(scheduleId,JourneyDto,res.Data.username)
+        );
+
+        if(returnModel.Success==true)
+            returnModel.ErrCode=201;
+
+        return returnModel;
+      }
+      else
+      {
+        return new ResponseModel
+        {
+            Success=false,
+            ErrCode=403,
+            Data=res.Data
+        };
+      }
+    }
+    else if(res.Success)
+    {
+        return new ResponseModel
+        {
+            Success=false,
+            ErrCode=401,
+            Data=res.Data
+        };
+    }  
+    else
+    {
+        return new ModdelMapper().ResponseToFormalResponse<AuthenticateTokenModel>(res);
+    }
+  
+  }
+
+   public async Task<ResponseModel> DeleteJourney(int scheduleId,string tokenId)
+  {
+    //First check the authentication 
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(tokenId);
+
+    if(res.Success ==true && res.Data.is_token_valid)
+    {
+      if(res.Data.is_user_admin==true && res.Data.is_token_valid && res.Data.is_user_active)
+      {
+        ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
+        (
+            await _JourneyDbRepo.DeleteJourney(scheduleId)
+        );
+
+        if(returnModel.Success==true)
+            returnModel.ErrCode=200;
+
+        return returnModel;
+      }
+      else
+      {
+        return new ResponseModel
+        {
+            Success=false,
+            ErrCode=403,
+            Data=res.Data
+        };
+      }
+    }
+    else if(res.Success)
+    {
+        return new ResponseModel
+        {
+            Success=false,
+            ErrCode=401,
+            Data=res.Data
+        };
+    }  
+    else
+    {
+        return new ModdelMapper().ResponseToFormalResponse<AuthenticateTokenModel>(res);
+    }
+  
+  }
 }
 
