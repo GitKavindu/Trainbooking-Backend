@@ -2,7 +2,7 @@ namespace Models.Dtos
 {
     public class AddJourneyDto
     {
-        public int scheduleId{get;set;}
+        public string? scheduleId{get;set;}
         public int trainId{get;set;}
         public int trainSeqNo{get;set;}
         

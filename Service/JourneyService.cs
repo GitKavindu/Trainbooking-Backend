@@ -17,7 +17,7 @@ public class JourneyService:IJourneyService
 //   {
 //     return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnJourneyDto>>(await _JourneyDbRepo.selectAllJourneys());
 //   }
-  public async Task<ResponseModel> selectAJourney(int schedule_id)
+  public async Task<ResponseModel> selectAJourney(string schedule_id)
   {
     return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnJourneyDto>>( await _JourneyDbRepo.selectAJourney(schedule_id) );
   }
@@ -30,6 +30,7 @@ public class JourneyService:IJourneyService
     {
       if(res.Data.is_user_admin==true && res.Data.is_token_valid && res.Data.is_user_active)
       {
+        JourneyDto.scheduleId=new CommonService().GenerateSha256Hash(DateTime.Now.ToString()+JourneyDto.trainId+JourneyDto.trainSeqNo);
         ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
         (
             await _JourneyDbRepo.AddJourney(JourneyDto,res.Data.username)
@@ -66,7 +67,7 @@ public class JourneyService:IJourneyService
   
   }
 
-  public async Task<ResponseModel> UpdateJourney(int scheduleId,AddJourneyDto JourneyDto)
+  public async Task<ResponseModel> UpdateJourney(AddJourneyDto JourneyDto)
   {
     //First check the authentication 
     ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(JourneyDto.tokenId);
@@ -77,7 +78,7 @@ public class JourneyService:IJourneyService
       {
         ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _JourneyDbRepo.UpdateJourney(scheduleId,JourneyDto,res.Data.username)
+            await _JourneyDbRepo.UpdateJourney(JourneyDto,res.Data.username)
         );
 
         if(returnModel.Success==true)
@@ -111,7 +112,7 @@ public class JourneyService:IJourneyService
   
   }
 
-   public async Task<ResponseModel> DeleteJourney(int scheduleId,string tokenId)
+   public async Task<ResponseModel> DeleteJourney(string scheduleId,string tokenId)
   {
     //First check the authentication 
     ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(tokenId);

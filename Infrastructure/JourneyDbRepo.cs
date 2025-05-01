@@ -17,7 +17,7 @@ public class JourneyDbRepo:IJourneyDbRepo
     
   }
 
-  public async Task<ResponseModelTyped<IEnumerable<ReturnJourneyDto>>> selectAJourney(int schedule_id)
+  public async Task<ResponseModelTyped<IEnumerable<ReturnJourneyDto>>> selectAJourney(string schedule_id)
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
@@ -64,19 +64,8 @@ public class JourneyDbRepo:IJourneyDbRepo
     {
         con.Open();
         try
-        {
-          int schedule_id;
-          string scheduleId=await con.QueryFirstAsync<string>($"SELECT MAX(schedule_id) FROM journey", commandType: CommandType.Text);
-          if(scheduleId!=null)
-          {
-            schedule_id=int.Parse(scheduleId)+1;
-          }
-          else
-          {
-            schedule_id=1;
-          }
-          
-          ResponseModelTyped<int> results=await insertJourney(addJourneyDto.addJourneyStationDto,schedule_id,username,addJourneyDto.trainId,addJourneyDto.trainSeqNo,con);
+        {    
+          ResponseModelTyped<int> results=await insertJourney(addJourneyDto.addJourneyStationDto,addJourneyDto.scheduleId,username,addJourneyDto.trainId,addJourneyDto.trainSeqNo,con);
 
           // Return the result
           return new ResponseModelTyped<string>()
@@ -109,7 +98,7 @@ public class JourneyDbRepo:IJourneyDbRepo
     }
   }
   
-  public async Task<ResponseModelTyped<string>> UpdateJourney(int scheduleId,AddJourneyDto addJourneyDto,string username)
+  public async Task<ResponseModelTyped<string>> UpdateJourney(AddJourneyDto addJourneyDto,string username)
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
@@ -120,12 +109,12 @@ public class JourneyDbRepo:IJourneyDbRepo
           {
             
             DynamicParameters para=new DynamicParameters();
-            para.Add("schedule_id",scheduleId);
+            para.Add("schedule_id",addJourneyDto.scheduleId);
             
             string sql=$"UPDATE journey SET is_active=false WHERE schedule_id=@schedule_id";
             await con.ExecuteAsync(sql,para, commandType: CommandType.Text);
 
-            ResponseModelTyped<int> results=await insertJourney(addJourneyDto.addJourneyStationDto,scheduleId,username,addJourneyDto.trainId,addJourneyDto.trainSeqNo,con);
+            ResponseModelTyped<int> results=await insertJourney(addJourneyDto.addJourneyStationDto,addJourneyDto.scheduleId,username,addJourneyDto.trainId,addJourneyDto.trainSeqNo,con);
 
             transaction.Commit();
 
@@ -163,7 +152,7 @@ public class JourneyDbRepo:IJourneyDbRepo
   }
 
   private async Task<ResponseModelTyped<int>> insertJourney(
-    AddJourneyStationDto []addJourneyStationDto,int scheduleId,string username,int trainId,int JourneyeqNo,NpgsqlConnection con)
+    AddJourneyStationDto []addJourneyStationDto,string scheduleId,string username,int trainId,int JourneyeqNo,NpgsqlConnection con)
   {
      
     DynamicParameters para=new DynamicParameters();
@@ -202,7 +191,7 @@ public class JourneyDbRepo:IJourneyDbRepo
     };    
   }
 
-  public async Task<ResponseModelTyped<string>> DeleteJourney(int scheduleId)
+  public async Task<ResponseModelTyped<string>> DeleteJourney(string scheduleId)
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
