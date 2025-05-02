@@ -107,6 +107,16 @@ public class JourneyDbRepo:IJourneyDbRepo
         {
           try
           {
+            bool isExists=(await ValidateScheduleId(addJourneyDto.scheduleId)).Data;
+            if(!isExists)
+            {
+              return new ResponseModelTyped<string>()
+              {
+                  Success = false,
+                  ErrCode = 404,
+                  Data = "Schedule Id not exists!"
+              };
+            }
             
             DynamicParameters para=new DynamicParameters();
             para.Add("schedule_id",addJourneyDto.scheduleId);
@@ -199,6 +209,16 @@ public class JourneyDbRepo:IJourneyDbRepo
         
           try
           {
+            bool isExists=(await ValidateScheduleId(scheduleId)).Data;
+            if(!isExists)
+            {
+              return new ResponseModelTyped<string>()
+              {
+                  Success = false,
+                  ErrCode = 404,
+                  Data = "Schedule Id not exists!"
+              };
+            }
             
             DynamicParameters para=new DynamicParameters();
             para.Add("schedule_id",scheduleId);
@@ -238,4 +258,26 @@ public class JourneyDbRepo:IJourneyDbRepo
         }  
     }
   
+  private async Task<ResponseModelTyped<bool>> ValidateScheduleId(string schedule_id)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        
+      con.Open();
+      DynamicParameters para=new DynamicParameters();
+      para.Add("schedule_id",schedule_id);
+              
+      string sql=$"SELECT EXISTS (SELECT 1 FROM journey WHERE schedule_id=@schedule_id and is_active=true) AS is_Exists;";
+      bool isExists=await con.QueryFirstAsync<bool>(sql,para, commandType: CommandType.Text);
+
+      return new ResponseModelTyped<bool>()
+      {
+          Success = true,
+          ErrCode = 200,
+          Data = isExists
+      };
+    }  
+
+  }
+   
 }

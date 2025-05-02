@@ -126,9 +126,6 @@ public class JourneyService:IJourneyService
             await _JourneyDbRepo.DeleteJourney(scheduleId)
         );
 
-        if(returnModel.Success==true)
-            returnModel.ErrCode=200;
-
         return returnModel;
       }
       else
