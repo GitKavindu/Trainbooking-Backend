@@ -34,8 +34,56 @@ public class BookingDbRepo:IBookingDbRepo
                 FROM journey j 
                 INNER JOIN apartments a ON j.train_no=a.train_id AND j.train_seq_no=a.train_seq_no
                 INNER JOIN seat s ON s.apartment_id = a.apartment_id
-                WHERE j.is_active=false AND j.journey_id=@journey_id
+                WHERE j.journey_id=@journey_id
                 ORDER BY s.row_no,s.is_left,s.seq_no"
+            ,para, commandType: CommandType.Text);
+
+          
+          return new ResponseModelTyped<IEnumerable<SeatModel>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = allSeats
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<IEnumerable<SeatModel>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<SeatModel>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  } 
+
+  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForJourney(int journeyId,int apartmentId) 
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+          para.Add("journey_id",journeyId);
+          para.Add("apartment_id",apartmentId);
+          
+          // Call the function with the parameters and retrieve the results
+          IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(
+            @$"SELECT * FROM booking_journey b
+                INNER JOIN seat s ON b.seat_id=s.seat_id
+                WHERE b.journey_id=@journey_id AND s.apartment_id=@apartment_id"
             ,para, commandType: CommandType.Text);
 
           

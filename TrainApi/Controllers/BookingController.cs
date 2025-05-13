@@ -30,6 +30,15 @@ public class BookingController: ControllerBase
       return responseModel;
     } 
 
+    [HttpGet("selectBookedSeatsForJourney")] 
+    public async Task<ResponseModel> SelectBookedSeatsForJourney(int journeyId,int apartmentId)
+    {
+      ResponseModel responseModel=await _BookingService.SelectBookedSeatsForJourney(journeyId,apartmentId); 
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    } 
     
 
 }
