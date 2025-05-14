@@ -6,4 +6,5 @@ public interface IBookingService
 {
   Task<ResponseModel> SelectAllSeatsForJourney(int journeyId);
   Task<ResponseModel> SelectBookedSeatsForJourney(int journeyId,int apartmentId);
+  Task<ResponseModel> SelectAllJourneysForSchedule(string scheduleId);
 }

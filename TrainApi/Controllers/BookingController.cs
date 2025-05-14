@@ -38,7 +38,18 @@ public class BookingController: ControllerBase
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 
       return responseModel;
+    }
+
+    [HttpGet("selectAllJourneysForSchedule")] 
+    public async Task<ResponseModel> SelectAllJourneysForSchedule(string scheduleId)
+    {
+      ResponseModel responseModel=await _BookingService.SelectAllJourneysForSchedule(scheduleId); 
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
     } 
+
     
 
 }
