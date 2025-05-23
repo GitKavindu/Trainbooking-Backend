@@ -30,7 +30,7 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(
-            @$"SELECT j.journey_id,j.train_no,j.train_seq_no,j.schedule_id,s.seat_id,s.is_left AS isLeft,s.row_no AS rowNo,s.seq_no AS seqNo
+            @$"SELECT j.journey_id,j.train_no,j.train_seq_no,j.schedule_id,s.seat_id,s.is_left AS isLeft,s.row_no AS rowNo,s.seq_no AS seqNo,s.apartment_id AS apartmentId
                 FROM journey j 
                 INNER JOIN apartments a ON j.train_no=a.train_id AND j.train_seq_no=a.train_seq_no
                 INNER JOIN seat s ON s.apartment_id = a.apartment_id
