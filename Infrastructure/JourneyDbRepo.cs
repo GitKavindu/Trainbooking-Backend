@@ -24,10 +24,18 @@ public class JourneyDbRepo:IJourneyDbRepo
         con.Open();
         try
         {
+          DynamicParameters para=new DynamicParameters();
+          para.Add("schedule_id",schedule_id);
+
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnJourneyDto> results=await con.QueryAsync<ReturnJourneyDto>(
-            $"SELECT t.name AS train,s.station_name AS station,j.scheduled_start_time as scheduledTime FROM journey j INNER JOIN station s ON s.station_id=j.station_no AND s.seq_no = j.seq_no INNER JOIN train t ON t.train_no = j.train_no AND t.seq_no = j.train_seq_no WHERE j.schedule_id={schedule_id} AND j.is_active=true ORDER BY j.journey_id"
-            , commandType: CommandType.Text);
+            @$"SELECT t.name AS train,s.station_name AS station,j.scheduled_start_time as scheduledTime 
+            FROM journey j 
+            INNER JOIN station s ON s.station_id=j.station_no AND s.seq_no = j.seq_no 
+            INNER JOIN train t ON t.train_no = j.train_no AND t.seq_no = j.train_seq_no 
+            WHERE j.schedule_id=@schedule_id AND j.is_active=true 
+            ORDER BY j.journey_id"
+            ,para, commandType: CommandType.Text);
 
           // Return the result
           return new ResponseModelTyped<IEnumerable<ReturnJourneyDto>>()
@@ -40,6 +48,7 @@ public class JourneyDbRepo:IJourneyDbRepo
         }
         catch (NpgsqlException ex)
         {
+            Console.WriteLine(ex); 
             return new ResponseModelTyped<IEnumerable<ReturnJourneyDto>>()
             {
                 Success = false,

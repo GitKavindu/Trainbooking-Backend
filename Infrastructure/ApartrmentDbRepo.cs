@@ -32,7 +32,7 @@ public class ApartmentDbRepo:IApartmentDbRepo
           foreach(var i in apartment)
           {
             IEnumerable<SeatModel> seats=await con.QueryAsync<SeatModel>(
-            $"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo FROM seat WHERE apartment_id={i.Apartment_id}"
+            $"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo,apartment_id AS apartmentId FROM seat WHERE apartment_id={i.Apartment_id}"
             , commandType: CommandType.Text);
 
             i.seatModel=seats.ToArray();
