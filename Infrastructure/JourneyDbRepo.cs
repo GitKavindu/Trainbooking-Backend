@@ -288,5 +288,53 @@ public class JourneyDbRepo:IJourneyDbRepo
     }  
 
   }
+
+  public async Task<ResponseModelTyped<IEnumerable<JourneyTrainModel>>> selectScheduleDetails(string schedule_id)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+          para.Add("schedule_id",schedule_id);
+
+          // Call the function with the parameters and retrieve the results
+          IEnumerable<JourneyTrainModel> results=await con.QueryAsync<JourneyTrainModel>(
+            @$"SELECT journey_id AS JourneyId,train_no AS trainNo,train_seq_no AS trainSeqNo
+                FROM journey
+                WHERE schedule_id=@schedule_id AND is_active=true 
+                ORDER BY journey_id"
+            ,para, commandType: CommandType.Text);
+
+          // Return the result
+          return new ResponseModelTyped<IEnumerable<JourneyTrainModel>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = results
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex); 
+            return new ResponseModelTyped<IEnumerable<JourneyTrainModel>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<JourneyTrainModel>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }
    
 }

@@ -9,4 +9,5 @@ public interface IJourneyDbRepo
   Task<ResponseModelTyped<IEnumerable<ReturnJourneyDto>>> selectAJourney(string schedule_id);
   Task<ResponseModelTyped<string>> UpdateJourney(AddJourneyDto addJourneyDto,string username);
   Task<ResponseModelTyped<string>> DeleteJourney(string scheduleId);
+  Task<ResponseModelTyped<IEnumerable<JourneyTrainModel>>> selectScheduleDetails(string schedule_id);
 }

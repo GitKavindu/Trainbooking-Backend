@@ -68,7 +68,7 @@ public class BookingDbRepo:IBookingDbRepo
     }
   } 
 
-  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForJourney(int journeyId,int apartmentId) 
+  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForApartment(int fromJourneyId,int ToJourneyId,int apartmentId) 
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
@@ -76,14 +76,16 @@ public class BookingDbRepo:IBookingDbRepo
         try
         {
           DynamicParameters para=new DynamicParameters();
-          para.Add("journey_id",journeyId);
+          para.Add("from_journey_id",fromJourneyId);
+          para.Add("to_journey_id",ToJourneyId);
           para.Add("apartment_id",apartmentId);
           
           // Call the function with the parameters and retrieve the results
           IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(
-            @$"SELECT * FROM booking_journey b
+            @$"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo,s.apartment_id AS apartmentId 
+                FROM booking_journey b
                 INNER JOIN seat s ON b.seat_id=s.seat_id
-                WHERE b.journey_id=@journey_id AND s.apartment_id=@apartment_id"
+                WHERE b.journey_id=@from_journey_id AND b.journey_id<=@to_journey_id AND s.apartment_id=@apartment_id"
             ,para, commandType: CommandType.Text);
 
           
@@ -115,7 +117,57 @@ public class BookingDbRepo:IBookingDbRepo
         }
     }
   } 
+   public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForTrain(int fromJourneyId,int ToJourneyId,int trainId,int trainSeqNo)
+   {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+          para.Add("from_journey_id",fromJourneyId);
+          para.Add("to_journey_id",ToJourneyId);
+          para.Add("train_id",trainId);
+          para.Add("train_seq_no",trainSeqNo);
+          
+          // Call the function with the parameters and retrieve the results
+          IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(
+            @$"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo,s.apartment_id AS apartmentId 
+                FROM booking_journey b
+                INNER JOIN seat s ON b.seat_id=s.seat_id
+                INNER JOIN apartments a ON s.apartment_id=a.apartment_id
+                WHERE b.journey_id=@from_journey_id AND b.journey_id<=@to_journey_id AND a.train_id=@train_id AND a.train_seq_no=@train_seq_no"
+            ,para, commandType: CommandType.Text);
 
+          
+          return new ResponseModelTyped<IEnumerable<SeatModel>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = allSeats
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<IEnumerable<SeatModel>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<SeatModel>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }
   public async Task<ResponseModelTyped<IEnumerable<ReturnJourneyStationDto>>> SelectAllJourneysForSchedule(string scheduleId) 
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
@@ -165,7 +217,118 @@ public class BookingDbRepo:IBookingDbRepo
             };
         }
     }
-  } 
+  }
+
+  public async Task<ResponseModelTyped<string>> BookForSchedule
+  (
+    AddBookingDto addBookingDto,string bookedUser,float netPrice,float[] prices
+  )
+  {
+    using(var con=new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        // Start a transaction
+        using (var transaction = con.BeginTransaction())
+        {
+            try
+            {
+                DynamicParameters para=new DynamicParameters();
+
+                para.Add("schedule_id",addBookingDto.scheduleId);
+                para.Add("booked_by",bookedUser);
+                para.Add("is_canceled",false);
+                para.Add("netprice",netPrice);
+  
+                int booking_id=await con.ExecuteScalarAsync<int>
+                (   @"INSERT INTO journey(schedule_id,booked_by,is_canceled,netprice) 
+                      VALUES (@schedule_id,@booked_by,@is_canceled,@netprice)
+                      RETURNING booking_id",
+                    para, commandType: CommandType.Text
+                );             
+
+                await insertBookings(booking_id,addBookingDto.scheduleId,addBookingDto.fromJourneyId,addBookingDto.seatModel,prices,con);
+                
+                transaction.Commit();
+                
+                return new ResponseModelTyped<string>()
+                {
+                    Success=true,
+                    ErrCode=200,
+                    Data="Operation successful"
+                };
+            }
+            catch(NpgsqlException ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine(ex);
+                return new ResponseModelTyped<string>()
+                {
+                    Success=false,
+                    ErrCode=500,
+                    Data="Database error!"
+                };
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+                transaction.Rollback();
+                return new ResponseModelTyped<string>()
+                {
+                    Success=false,
+                    ErrCode=500,
+                    Data="Something went wrong!"
+                };
+            }
+        }
+
+    }
+  }
+
+  private async Task<ResponseModelTyped<int>> insertBookings(
+    int bookingId,string scheduleId,int fromJourneyId,SeatModel[] seatModel,float[] prices,NpgsqlConnection con)
+  {
+     
+    DynamicParameters para=new DynamicParameters();
+    string sql=$"INSERT INTO booking_journey(booking_id,journey_id,price,seat_id,schedule_id) VALUES ";
+
+    for(int i=0;i<seatModel.Length;i++)
+    {
+        sql=sql+@$"(@booking_id{i},@journey_id{i},@price{i},
+                    (select seat_id from seat where is_left=@is_left{i} AND row_no=@row_no{i} AND seq_no=@seq_no{i} AND apartment_id=@apartment_id{i}),
+                    @schedule_id{i})";
+
+        if(i==seatModel.Length-1)
+        {
+            sql=sql+";";
+        }
+        else
+        {
+            sql=sql+",";
+        }
+
+        para.Add($"booking_id{i}",bookingId); 
+        para.Add($"journey_id{i}",fromJourneyId);
+        para.Add($"price{i}",prices[i]);
+        para.Add($"is_left{i}",seatModel[i].isLeft);
+        para.Add($"row_no{i}",seatModel[i].rowNo);
+        para.Add($"seq_no{i}",seatModel[i].seqNo);
+        para.Add($"apartment_id{i}",seatModel[i].apartmentId);
+        para.Add($"schedule_id{i}",scheduleId);
+
+        //increment from journeyId by 1
+        fromJourneyId++;
+        
+    }
+    Console.WriteLine("sql "+sql);
+    int results=await con.ExecuteAsync(sql,para, commandType: CommandType.Text);
+
+    return new ResponseModelTyped<int>()
+    {
+        Success=true,
+        ErrCode=200,
+        Data=results
+    };    
+  }
 
   
 }
