@@ -240,7 +240,7 @@ public class BookingDbRepo:IBookingDbRepo
                 para.Add("netprice",netPrice);
   
                 int booking_id=await con.ExecuteScalarAsync<int>
-                (   @"INSERT INTO journey(schedule_id,booked_by,is_canceled,netprice) 
+                (   @"INSERT INTO booking(schedule_id,booked_by,is_canceled,netprice) 
                       VALUES (@schedule_id,@booked_by,@is_canceled,@netprice)
                       RETURNING booking_id",
                     para, commandType: CommandType.Text
