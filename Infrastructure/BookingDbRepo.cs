@@ -85,7 +85,7 @@ public class BookingDbRepo:IBookingDbRepo
             @$"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo,s.apartment_id AS apartmentId 
                 FROM booking_journey b
                 INNER JOIN seat s ON b.seat_id=s.seat_id
-                WHERE b.journey_id=@from_journey_id AND b.journey_id<=@to_journey_id AND s.apartment_id=@apartment_id"
+                WHERE b.journey_id>=@from_journey_id AND b.journey_id<=@to_journey_id AND s.apartment_id=@apartment_id"
             ,para, commandType: CommandType.Text);
 
           
@@ -133,10 +133,11 @@ public class BookingDbRepo:IBookingDbRepo
           // Call the function with the parameters and retrieve the results
           IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(
             @$"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo,s.apartment_id AS apartmentId 
-                FROM booking_journey b
-                INNER JOIN seat s ON b.seat_id=s.seat_id
+                FROM booking_journey bj
+				        INNER JOIN booking b ON bj.booking_id=b.booking_id AND b.is_canceled=false
+                INNER JOIN seat s ON bj.seat_id=s.seat_id
                 INNER JOIN apartments a ON s.apartment_id=a.apartment_id
-                WHERE b.journey_id=@from_journey_id AND b.journey_id<=@to_journey_id AND a.train_id=@train_id AND a.train_seq_no=@train_seq_no"
+                WHERE bj.journey_id>=@from_journey_id AND bj.journey_id<=@to_journey_id AND a.train_id=@train_id AND a.train_seq_no=@train_seq_no"
             ,para, commandType: CommandType.Text);
 
           

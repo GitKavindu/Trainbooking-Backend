@@ -45,6 +45,12 @@ public class BookingService:IBookingService
       {
         //check all journeys align with schedule Id
         ResponseModelTyped<IEnumerable<JourneyTrainModel>> journeyTrainModel=await _journeyDbRepo.selectScheduleDetails(addBookingDto.scheduleId);
+
+        if(journeyTrainModel.Success==false)
+        {
+          return new ModdelMapper().ResponseToFormalResponse<IEnumerable<JourneyTrainModel>>(journeyTrainModel);
+        }
+
         if(journeyTrainModel.Success)
         {
           if(journeyTrainModel.Data.Count() != 0)
@@ -59,6 +65,11 @@ public class BookingService:IBookingService
               ResponseModelTyped<IEnumerable<ReturnApartmentDto>> apartrmentsForTrain=
               await _apartmentDbRepo.selectAllApartmentsForTrain(journeyTrainModelArray[0].trainNo,journeyTrainModelArray[0].trainSeqNo);
 
+              if(apartrmentsForTrain.Success==false)
+              {
+                return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnApartmentDto>>(apartrmentsForTrain);
+              }
+
               if(apartrmentsForTrain.Data.Count() != 0)
               {
                 ReturnApartmentDto[] apartrmentsForTrainArray=apartrmentsForTrain.Data.ToArray();
@@ -72,8 +83,13 @@ public class BookingService:IBookingService
                     await _BookingDbRepo.SelectBookedSeatsForTrain(
                       addBookingDto.fromJourneyId,addBookingDto.ToJourneyId,journeyTrainModelArray[0].trainNo,journeyTrainModelArray[0].trainSeqNo);
 
+                    if(bookedseats.Success==false)
+                    {
+                      return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(bookedseats);
+                    }
+                    
                     SeatModel[] bookedSeatArray=bookedseats.Data.ToArray();
-
+                    
                     bool seatValidation=await CheckBookedSeats(addBookingDto,bookedSeatArray);
 
                     if(seatValidation)
