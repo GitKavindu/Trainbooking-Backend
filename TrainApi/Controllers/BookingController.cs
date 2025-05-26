@@ -59,4 +59,25 @@ public class BookingController: ControllerBase
 
       return responseModel;
     }
+
+    [HttpGet("getBookingDetails")] 
+    public async Task<ResponseModel> GetBookingDetails(int bookingId)
+    {
+      ResponseModel responseModel=await _BookingService.GetBookingDetails(bookingId); 
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    }
+
+    [HttpPost("cancelBooking")] 
+    public async Task<ResponseModel> CancelBooking(CancelBookingDto cancelBookingDto)
+    {
+      ResponseModel responseModel=await _BookingService.CancelBooking(cancelBookingDto); 
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    }
+
 }

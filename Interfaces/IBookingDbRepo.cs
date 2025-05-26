@@ -14,4 +14,7 @@ public interface IBookingDbRepo
     AddBookingDto addBookingDto,string bookedUser,float netPrice,float[] prices
   );
 
+  Task<ResponseModelTyped<ReturnBookingDetailsDto>> GetBookingDetails(int bookingId);
+  Task<ResponseModelTyped<string>> CancelBooking(int bookingId,float refundPrice);
+
 }

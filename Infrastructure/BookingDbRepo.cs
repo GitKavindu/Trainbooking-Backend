@@ -330,6 +330,109 @@ public class BookingDbRepo:IBookingDbRepo
         Data=results
     };    
   }
+  
+  public async Task<ResponseModelTyped<ReturnBookingDetailsDto>> GetBookingDetails(int bookingId) 
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+          para.Add("booking_id",bookingId);
+          
+          // Call the function with the parameters and retrieve the results
+          ReturnBookingDetailsDto bookingDetails=await con.QueryFirstAsync<ReturnBookingDetailsDto>(
+            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled 
+                FROM booking b
+                INNER JOIN journey j ON b.schedule_id=j.schedule_id AND j.is_active=true
+                WHERE booking_id=@booking_id
+                GROUP BY booking_id,booked_by,netPrice,is_canceled,j.schedule_id"
+            ,para, commandType: CommandType.Text);
 
+          IEnumerable<SeatModel> seatsBooked=await con.QueryAsync<SeatModel>(
+            @$"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo,s.apartment_id AS apartmentId 
+                FROM booking_journey bj
+				        INNER JOIN booking b ON bj.booking_id=b.booking_id AND b.is_canceled=false
+                INNER JOIN seat s ON bj.seat_id=s.seat_id
+                INNER JOIN apartments a ON s.apartment_id=a.apartment_id
+                WHERE b.booking_id=@booking_id"
+            ,para, commandType: CommandType.Text);
+
+          bookingDetails.bookedSeats=seatsBooked.ToArray();
+          
+          return new ResponseModelTyped<ReturnBookingDetailsDto>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = bookingDetails
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<ReturnBookingDetailsDto>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<ReturnBookingDetailsDto>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }
+
+  public async Task<ResponseModelTyped<string>> CancelBooking(int bookingId,float refundPrice) 
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+          para.Add("booking_id",bookingId);
+          para.Add("refund_price",refundPrice);
+          
+          // Call the function with the parameters and retrieve the results
+          await con.ExecuteAsync(
+            @$"UPDATE booking SET is_canceled=true,refund_price=@refund_price WHERE booking_id=@booking_id"
+            ,para, commandType: CommandType.Text);
+          
+          return new ResponseModelTyped<string>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = "Booking canceled sucessfully!!"
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<string>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<string>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }  
   
 }

@@ -212,6 +212,79 @@ public class BookingService:IBookingService
     return fromJourneyId && ToJourneyId;
   }
 
+  public async Task<ResponseModel> CancelBooking(CancelBookingDto cancelBookingDto)
+  {
+    //First check the authentication 
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(cancelBookingDto.tokenId);
+
+    if(res.Success ==true && res.Data.is_token_valid && res.Data.is_user_active)
+    {
+      ResponseModelTyped<ReturnBookingDetailsDto> returnBookingDetailsDto=await _BookingDbRepo.GetBookingDetails(cancelBookingDto.bookingId);
+
+      if(returnBookingDetailsDto.Success==false)
+      {
+        return new ModdelMapper().ResponseToFormalResponse<ReturnBookingDetailsDto>(returnBookingDetailsDto);
+      }
+      else if(returnBookingDetailsDto.Data.bookingId==0)
+      {
+        return new ResponseModel()
+        {
+          Success=false,
+          ErrCode=403,
+          Data="You can't cancel this booking as the schedule is canceled!"
+        };
+      }
+
+      if(returnBookingDetailsDto.Data.bookedBy!=res.Data.username)
+      {
+          return new ResponseModel()
+          {
+            Success=false,
+            ErrCode=403,
+            Data="You can't cancel a booking which wasn't placed by you!"
+          };
+      }
+      else if(returnBookingDetailsDto.Data.isCanceled==true)
+      {
+          return new ResponseModel()
+          {
+            Success=false,
+            ErrCode=404,
+            Data="Booking is already canceled!!"
+          };
+      }
+
+      return new ModdelMapper().ResponseToFormalResponse<string>
+      (
+        await _BookingDbRepo.CancelBooking
+        (
+          returnBookingDetailsDto.Data.bookingId,
+          await refundPrice(returnBookingDetailsDto.Data.price)
+        )
+      );
+
+    }
+    else if(res.Success)
+    {
+        return new ResponseModel
+        {
+            Success=false,
+            ErrCode=401,
+            Data=res.Data
+        };
+    }  
+    else
+    {
+        return new ModdelMapper().ResponseToFormalResponse<AuthenticateTokenModel>(res);
+    }
+
+  }
+
+  public async Task<ResponseModel> GetBookingDetails(int bookingId)
+  {
+    return new ModdelMapper().ResponseToFormalResponse<ReturnBookingDetailsDto>(await _BookingDbRepo.GetBookingDetails(bookingId));
+  }
+
   private static async Task<bool> CheckBookingApartments(AddBookingDto addBookingDto,ReturnApartmentDto[] returnApartmentDto)
   {
     foreach(var i in addBookingDto.seatModel)
@@ -252,7 +325,7 @@ public class BookingService:IBookingService
     return true;
   }
   
-  //calculate price for booked seats
+  //calculate price for booked seatsseats
   private static async Task<float[]> getPriceBookedSeats(AddBookingDto addBookingDto)
   {
     float[] prices=new float[addBookingDto.seatModel.Length];
@@ -278,5 +351,12 @@ public class BookingService:IBookingService
     }
 
     return total;
+  }
+  
+  //calculate Refund Price for canceled bookings
+  private static async Task<float> refundPrice(float price)
+  {
+    //dummy code
+    return price*0.80f;
   }
 }

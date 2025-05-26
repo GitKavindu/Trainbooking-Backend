@@ -9,4 +9,7 @@ public interface IBookingService
   Task<ResponseModel> SelectAllJourneysForSchedule(string scheduleId);
 
   Task<ResponseModel> BookForSchedule(AddBookingDto addBookingDto);
+  Task<ResponseModel> GetBookingDetails(int bookingId);
+  Task<ResponseModel> CancelBooking(CancelBookingDto cancelBookingDto);
+
 }
