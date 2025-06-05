@@ -142,7 +142,7 @@ public class UserDbRepo:IUserDbRepo
   }
 
 
-  public async Task<ResponseModelTyped<string>> GetToken(TokenModel tokenModel)
+  public async Task<ResponseModelTyped<IResult>> GetToken(TokenModel tokenModel)
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
@@ -163,33 +163,44 @@ public class UserDbRepo:IUserDbRepo
               commandType: CommandType.Text
           );
 
+          para = new DynamicParameters();
+          para.Add("token_id", newTokenId);
+
+          ReturnTokenDto ?returnToken = await con.QueryFirstAsync<ReturnTokenDto>(
+              $@"SELECT end_time AS endtime, username, token_id AS tokenId,is_active AS isActive 
+                  FROM token
+                  WHERE token_id=@token_id",
+              para, 
+              commandType: CommandType.Text
+          );
+
           // Return the result
-          return new ResponseModelTyped<string>()
+          return new ResponseModelTyped<IResult>()
           {
               Success = true,
               ErrCode = 200,
-              Data = newTokenId // Return the new_token_id as the data
+              Data = returnToken // Return the new_token_id as the data
           };
 
         }
         catch (NpgsqlException ex)
         {
             Console.WriteLine(ex);
-            return new ResponseModelTyped<string>()
+            return new ResponseModelTyped<IResult>()
             {
                 Success = false,
                 ErrCode = 500,
-                Data = "Error during procedure call"
+                Data =new ReturnErrDto("Error during procedure call")
             };
         }
         catch (Exception ex)
         {
           Console.WriteLine(ex);  
-          return new ResponseModelTyped<string>()
+          return new ResponseModelTyped<IResult>()
             {
                 Success = false,
                 ErrCode = 500,
-                Data = "Unexpected error"
+                Data = new ReturnErrDto("Unexpected error")
             };
         }
     }
