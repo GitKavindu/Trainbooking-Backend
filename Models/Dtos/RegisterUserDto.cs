@@ -3,12 +3,12 @@ namespace Models.Dtos
 {
     public class RegisterUserDto
     {
-      public string UserName{get;set;}
-      public string MobileNo{get;set;}
-      public string Email{get;set;}
-      public string NationalId{get;set;}
-      public string Password{get;set;}
-      public string PreferedName{get;set;}
+      public string ?UserName{get;set;}
+      public string ?MobileNo{get;set;}
+      public string ?Email{get;set;}
+      public string ?NationalId{get;set;}
+      public string ?Password{get;set;}
+      public string ?PreferedName{get;set;}
       public string [] Name{get;set;}
       
       private ValidationModel validationModel=new ValidationModel();
