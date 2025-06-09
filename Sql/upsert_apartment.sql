@@ -15,8 +15,17 @@ DECLARE
 	v_created_date TIMESTAMP;
 	v_max_seq_no INT;
 BEGIN
-	_result='5';
+
+	--check whether the entered train id is valid
+	IF _train_id IS NULL OR _train_seq_no IS NULL THEN
+		RAISE EXCEPTION 'Train id or seq no is null!' USING ERRCODE = '45000';
+	ELSIF NOT EXISTS (SELECT 1 FROM train WHERE train_no=_train_id AND seq_no=_train_seq_no AND is_active=true) THEN
+		--raise exception for train do not exist
+		RAISE EXCEPTION 'Train do not exist!' USING ERRCODE = '45000';
+	END IF;
+	
 	IF _is_update THEN
+				
 		--select 1 for given apartment id to check it exists
 		IF EXISTS (SELECT 1 FROM apartments WHERE apartment_id=_apartment_id AND is_active=true) THEN
 			
@@ -27,13 +36,7 @@ BEGIN
 			
 			IF _is_active THEN
 				--update apartment
-
-				--check whether the entered train id is valid
-				IF _train_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM train WHERE train_no=_train_id AND seq_no=_train_seq_no AND is_active=true) THEN
-					--raise exception for train do not exist
-					RAISE EXCEPTION 'Train do not exist!' USING ERRCODE = '45000';
-				END IF;
-				
+			
 				--select created date
 				SELECT added_date INTO v_created_date
 				FROM apartments
@@ -56,7 +59,7 @@ BEGIN
 	ELSE
 		--Add a new apartment
 		INSERT INTO apartments (class,added_by,added_date,modified_date,is_active,train_seq_no,train_id,updated_from)
-		VALUES (_class,_added_by,(SELECT CURRENT_TIMESTAMP),null,true,null,null,null)
+		VALUES (_class,_added_by,(SELECT CURRENT_TIMESTAMP),null,true,_train_seq_no,_train_id,null)
 		RETURNING apartment_id INTO _result;
 	END IF;
 END;

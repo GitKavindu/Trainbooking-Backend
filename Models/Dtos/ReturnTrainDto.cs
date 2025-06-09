@@ -2,6 +2,7 @@ namespace Models.Dtos;
 public class ReturnTrainnDto
 {
   public int ?train_no{get;set;}
+  public int ?train_seq_no{get;set;}
   public string ?train_name{get;set;}
   public string ?added_by{get;set;}
 

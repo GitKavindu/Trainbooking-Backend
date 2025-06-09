@@ -1,6 +1,6 @@
 using System.Text;
 using System.Security.Cryptography;
-namespace Service;
+namespace Models;
 public class CommonService
 {
     public string GenerateSha256Hash(string input)
@@ -22,4 +22,12 @@ public class CommonService
             return builder.ToString();
         }
     }
+    public string CleanMessage(Exception ex)
+    {
+        string[] parts = ex.Message.Split(new[] { ": " }, 2, StringSplitOptions.None);
+        string cleanMessage = parts.Length > 1 ? parts[1] : ex.Message;
+
+        return cleanMessage;
+    }
+    
 }

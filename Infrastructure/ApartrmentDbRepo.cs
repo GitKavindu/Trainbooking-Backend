@@ -17,6 +17,50 @@ public class ApartmentDbRepo:IApartmentDbRepo
     _dbConnectRepo=dbConnectRepo;
     
   }
+
+  public async Task<ResponseModelTyped<int>> selectMaxSeqNoForTrain(int trainId)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          
+          DynamicParameters para=new DynamicParameters();
+          para.Add("train_no",trainId);
+
+          int seqNo=await con.QueryFirstAsync<int>(
+              @$"SELECT MAX(seq_no) FROM train WHERE train_no=@train_no AND is_active=true"
+              ,para, commandType: CommandType.Text);
+
+          return new ResponseModelTyped<int>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = seqNo
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            return new ResponseModelTyped<int>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<int>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }
+
   public async Task<ResponseModelTyped<IEnumerable<ReturnApartmentDto>>> selectAllApartmentsForTrain(int trainId,int seqNo)
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
@@ -25,9 +69,29 @@ public class ApartmentDbRepo:IApartmentDbRepo
         try
         {
           // Call the function with the parameters and retrieve the results
-          IEnumerable<ReturnApartmentDto> apartment=await con.QueryAsync<ReturnApartmentDto>(
-            $"SELECT Apartment_id,class AS ApartmrntClass,added_by,TO_CHAR(added_date, 'YYYY-MM-DD') AS created_date,TO_CHAR(modified_date, 'YYYY-MM-DD') AS lastUpdated_date FROM apartments WHERE is_active=true and train_id={trainId} and train_seq_no={seqNo}"
-            , commandType: CommandType.Text);
+          IEnumerable<ReturnApartmentDto> apartment;
+          DynamicParameters para=new DynamicParameters();
+          if(trainId==0 | seqNo==0)
+          {
+             apartment=await con.QueryAsync<ReturnApartmentDto>(
+              @$"SELECT Apartment_id,class AS ApartmrntClass,added_by,
+                    TO_CHAR(added_date, 'YYYY-MM-DD') AS created_date,TO_CHAR(modified_date, 'YYYY-MM-DD') AS lastUpdated_date 
+                  FROM apartments 
+                  WHERE is_active=true and train_id is null AND train_seq_no is null"
+              , commandType: CommandType.Text);
+          }
+          else
+          {
+            para.Add("train_id",trainId);
+            para.Add("train_seq_no",seqNo);
+
+            apartment=await con.QueryAsync<ReturnApartmentDto>(
+              @$"SELECT Apartment_id,class AS ApartmrntClass,added_by,
+                    TO_CHAR(added_date, 'YYYY-MM-DD') AS created_date,TO_CHAR(modified_date, 'YYYY-MM-DD') AS lastUpdated_date 
+                  FROM apartments 
+                  WHERE is_active=true and train_id=@train_id AND train_seq_no=@train_seq_no"
+              ,para, commandType: CommandType.Text);
+          }
 
           foreach(var i in apartment)
           {
@@ -69,43 +133,60 @@ public class ApartmentDbRepo:IApartmentDbRepo
   
   public async Task<ResponseModelTyped<string>> UpsertApartment
   (
+    bool isUpdate, int apartmentId, string apartmentClass, int trainId, int trainSeqNo, bool isActive, string username, SeatModel[] seatModel,NpgsqlConnection con
+  )
+  {     
+      Console.WriteLine("awa");
+      DynamicParameters para=new DynamicParameters();
+
+      para.Add("_is_update",isUpdate);
+      para.Add("_apartment_id",apartmentId);
+      para.Add("_class",apartmentClass);
+      para.Add("_train_id",trainId);
+      para.Add("_train_seq_no",trainSeqNo);
+      para.Add("_is_active",isActive);
+      para.Add("_added_by",username);
+      // OUT parameter
+      para.Add("_result", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+      Console.WriteLine(trainSeqNo+"   "+trainId);
+      var results=await con.ExecuteAsync
+      (   "CALL public.upsert_apartment(@_is_update,@_apartment_id,@_class,@_train_id,@_train_seq_no,@_is_active,@_added_by,NULL)",
+          para, commandType: CommandType.Text
+      );
+
+      // Get OUT parameter value for Added_apartmentId
+      int Added_apartmentId= para.Get<int>("_result");
+      
+
+      if(seatModel is not null)
+      {
+          results=results+( await insertSeats(seatModel,Added_apartmentId,con) ).Data;
+      }
+      
+      return new ResponseModelTyped<string>()
+      {
+          Success=true,
+          ErrCode=200,
+          Data="Operation successful"
+      };
+  }
+
+  public async Task<ResponseModelTyped<string>> UpsertApartment
+  (
     bool isUpdate, int apartmentId, string apartmentClass, int trainId, int trainSeqNo, bool isActive, string username, SeatModel[] seatModel
   )
   {
     using(var con=new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
         con.Open();
-        // Start a transaction
+       
         using (var transaction = con.BeginTransaction())
         {
             try
             {
-                DynamicParameters para=new DynamicParameters();
-
-                para.Add("_is_update",isUpdate);
-                para.Add("_apartment_id",apartmentId);
-                para.Add("_class",apartmentClass);
-                para.Add("_train_id",trainId);
-                para.Add("_train_seq_no",trainSeqNo);
-                para.Add("_is_active",isActive);
-                para.Add("_added_by",username);
-                // OUT parameter
-                para.Add("_result", dbType: DbType.Int32, direction: ParameterDirection.Output);
-
-                var results=await con.ExecuteAsync
-                (   "CALL public.upsert_apartment(@_is_update,@_apartment_id,@_class,@_train_id,@_train_seq_no,@_is_active,@_added_by,NULL)",
-                    para, commandType: CommandType.Text
-                );
-
-                // Get OUT parameter value for Added_apartmentId
-                int Added_apartmentId= para.Get<int>("_result");
                 
-
-                if(seatModel is not null)
-                {
-                    results=results+( await insertSeats(seatModel,Added_apartmentId,con) ).Data;
-                }
-
+                await UpsertApartment(isUpdate,apartmentId,apartmentClass,trainId,trainSeqNo,isActive,username,seatModel,con);
                 transaction.Commit();
                 
                 return new ResponseModelTyped<string>()
@@ -118,6 +199,15 @@ public class ApartmentDbRepo:IApartmentDbRepo
             catch(NpgsqlException ex)
             {
                 transaction.Rollback();
+                if (ex.SqlState == "45000") // Apartment not exist
+                {
+                    return new ResponseModelTyped<string>()
+                    {
+                        Success = false,
+                        ErrCode = 400,
+                        Data = new CommonService().CleanMessage(ex)
+                    };
+                }
                 Console.WriteLine(ex);
                 return new ResponseModelTyped<string>()
                 {
@@ -138,7 +228,6 @@ public class ApartmentDbRepo:IApartmentDbRepo
                 };
             }
         }
-
     }
   }
 

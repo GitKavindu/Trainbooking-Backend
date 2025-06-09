@@ -52,7 +52,7 @@ public class StationDbRepo:IStationDbRepo
                 {
                     Success = false,
                     ErrCode = 400,
-                    Data = ex.Message
+                    Data =  new CommonService().CleanMessage(ex)
                 };
             }
 

@@ -2,6 +2,7 @@ namespace Models.Dtos;
 public class ReturnApartmentDto
 {
   public int ?Apartment_id{get;set;}
+  public int ?train_seq_no{get;set;}
   public string ?ApartmrntClass{get;set;}
   public string ?added_by{get;set;}
 
