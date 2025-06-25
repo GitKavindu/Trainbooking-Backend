@@ -17,8 +17,9 @@ DECLARE
 BEGIN
 
 	--check whether the entered train id is valid
-	IF _train_id IS NULL OR _train_seq_no IS NULL THEN
-		RAISE EXCEPTION 'Train id or seq no is null!' USING ERRCODE = '45000';
+	IF _train_id=0 AND _train_seq_no=0 THEN
+		_train_id=NULL;
+		_train_seq_no=NULL;
 	ELSIF NOT EXISTS (SELECT 1 FROM train WHERE train_no=_train_id AND seq_no=_train_seq_no AND is_active=true) THEN
 		--raise exception for train do not exist
 		RAISE EXCEPTION 'Train do not exist!' USING ERRCODE = '45000';
