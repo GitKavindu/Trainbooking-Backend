@@ -15,7 +15,9 @@ DECLARE
 	v_created_date TIMESTAMP;
 	v_max_seq_no INT;
 BEGIN
-
+	--Add a dummy value to result
+	_result=-1;
+	
 	--check whether the entered train id is valid
 	IF _train_id=0 AND _train_seq_no=0 THEN
 		_train_id=NULL;

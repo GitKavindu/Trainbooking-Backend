@@ -138,8 +138,7 @@ public class ApartmentDbRepo:IApartmentDbRepo
   (
     bool isUpdate, int apartmentId, string apartmentClass, int trainId, int trainSeqNo, bool isActive, string username, SeatModel[] seatModel,NpgsqlConnection con
   )
-  {     
-      Console.WriteLine("awa");
+  {
       DynamicParameters para=new DynamicParameters();
 
       para.Add("_is_update",isUpdate);
@@ -152,7 +151,6 @@ public class ApartmentDbRepo:IApartmentDbRepo
       // OUT parameter
       para.Add("_result", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
-      Console.WriteLine(trainSeqNo+"   "+trainId);
       var results=await con.ExecuteAsync
       (   "CALL public.upsert_apartment(@_is_update,@_apartment_id,@_class,@_train_id,@_train_seq_no,@_is_active,@_added_by,NULL)",
           para, commandType: CommandType.Text
@@ -258,7 +256,6 @@ public class ApartmentDbRepo:IApartmentDbRepo
         para.Add($"seq_no{i}",seatModels[i].seqNo);
         para.Add($"apartment_id{i}",apartmentId);
     }
-    Console.WriteLine("sql "+sql);
     int results=await con.ExecuteAsync(sql,para, commandType: CommandType.Text);
 
     return new ResponseModelTyped<int>()
