@@ -66,12 +66,20 @@ namespace TrainBookingSystem.TrainApi
             services.AddScoped<IDbConnectRepo>((c)=> new DbConnectRepo(_connectionString));
             services.AddScoped<IUserDbRepo,UserDbRepo>(); 
             services.AddScoped<IAdminDbRepo,AdminDbRepo>();
+            services.AddScoped<IStationDbRepo,StationDbRepo>();
+            services.AddScoped<ITrainDbRepo,TrainDbRepo>();
+            services.AddScoped<IApartmentDbRepo,ApartmentDbRepo>();
+            services.AddScoped<IJourneyDbRepo,JourneyDbRepo>();
+            services.AddScoped<IBookingDbRepo,BookingDbRepo>();
 
             //Service dependecies
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<IAdminService,AdminService>();
-
-            
+            services.AddScoped<IStationService,StationService>();
+            services.AddScoped<ITrainService,TrainService>();
+            services.AddScoped<IApartmentService,ApartmentService>();
+            services.AddScoped<IJourneyService,JourneyService>();
+            services.AddScoped<IBookingService,BookingService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

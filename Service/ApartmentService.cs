@@ -3,25 +3,25 @@ using Models;
 using Interfaces;
 namespace Service;
 
-public class StationService:IStationService
+public class ApartmentService:IApartmentService
 {
   private IAdminDbRepo _adminDbRepo;
-  private IStationDbRepo  _stationDbRepo;
-  public StationService(IAdminDbRepo adminDbRepo,IStationDbRepo stationDbRepo)
+  private IApartmentDbRepo  _ApartmentDbRepo;
+  public ApartmentService(IAdminDbRepo adminDbRepo,IApartmentDbRepo ApartmentDbRepo)
   {
     _adminDbRepo=adminDbRepo;
-    _stationDbRepo=stationDbRepo;
+    _ApartmentDbRepo=ApartmentDbRepo;
   }
  
-  public async Task<ResponseModel> GetStations()
+  public async Task<ResponseModel> GetApartmentsForTrain(int trainId,int seqNo)
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnStationDto>>(await _stationDbRepo.selectAllStations());
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnApartmentDto>>(await _ApartmentDbRepo.selectAllApartmentsForTrain(trainId,seqNo));
   }
-
-  public async Task<ResponseModel> AddStation(AddStationDto stationDto)
+//bool isUpdate, int apartmentId, string apartmentClass, int trainId, int trainSeqNo, bool isActive, string username, SeatModel[] seatModel
+  public async Task<ResponseModel> AddApartment(AddApartmentDto ApartmentDto)
   {
     //First check the authentication 
-    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(stationDto.token_id);
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(ApartmentDto.tokenId);
 
     if(res.Success ==true && res.Data.is_token_valid)
     {
@@ -29,7 +29,8 @@ public class StationService:IStationService
       {
         ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _stationDbRepo.UpsertStation(false,int.Parse(stationDto.station_id),stationDto.station_name,true,res.Data.username)
+            await _ApartmentDbRepo.UpsertApartment
+            (false,ApartmentDto.apartment_id,ApartmentDto._class,ApartmentDto.train_id,ApartmentDto.train_seq_no,true,res.Data.username,ApartmentDto.seatModel)
         );
 
         if(returnModel.Success==true)
@@ -63,10 +64,10 @@ public class StationService:IStationService
   
   }
 
-  public async Task<ResponseModel> UpdateStation(AddStationDto stationDto)
+  public async Task<ResponseModel> UpdateApartment(AddApartmentDto ApartmentDto)
   {
     //First check the authentication 
-    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(stationDto.token_id);
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(ApartmentDto.tokenId);
 
     if(res.Success ==true && res.Data.is_token_valid)
     {
@@ -74,7 +75,8 @@ public class StationService:IStationService
       {
         ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _stationDbRepo.UpsertStation(true,int.Parse(stationDto.station_id),stationDto.station_name,true,res.Data.username)
+            await _ApartmentDbRepo.UpsertApartment
+            (true,ApartmentDto.apartment_id,ApartmentDto._class,ApartmentDto.train_id,ApartmentDto.train_seq_no,true,res.Data.username,ApartmentDto.seatModel)
         );
 
         if(returnModel.Success==true)
@@ -108,10 +110,10 @@ public class StationService:IStationService
   
   }
 
-  public async Task<ResponseModel> DeleteStation(AddStationDto stationDto)
+  public async Task<ResponseModel> DeleteApartment(AddApartmentDto ApartmentDto)
   {
     //First check the authentication 
-    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(stationDto.token_id);
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(ApartmentDto.tokenId);
 
     if(res.Success ==true && res.Data.is_token_valid)
     {
@@ -119,7 +121,8 @@ public class StationService:IStationService
       {
         return new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _stationDbRepo.UpsertStation(true,int.Parse(stationDto.station_id),stationDto.station_name,false,res.Data.username)
+            await _ApartmentDbRepo.UpsertApartment
+            (true,ApartmentDto.apartment_id,ApartmentDto._class,ApartmentDto.train_id,ApartmentDto.train_seq_no,false,res.Data.username,null)
         );
 
       }

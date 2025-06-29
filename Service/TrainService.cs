@@ -3,25 +3,25 @@ using Models;
 using Interfaces;
 namespace Service;
 
-public class StationService:IStationService
+public class TrainService:ITrainService
 {
   private IAdminDbRepo _adminDbRepo;
-  private IStationDbRepo  _stationDbRepo;
-  public StationService(IAdminDbRepo adminDbRepo,IStationDbRepo stationDbRepo)
+  private ITrainDbRepo  _TrainDbRepo;
+  public TrainService(IAdminDbRepo adminDbRepo,ITrainDbRepo TrainDbRepo)
   {
     _adminDbRepo=adminDbRepo;
-    _stationDbRepo=stationDbRepo;
+    _TrainDbRepo=TrainDbRepo;
   }
  
-  public async Task<ResponseModel> GetStations()
+  public async Task<ResponseModel> GetTrains()
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnStationDto>>(await _stationDbRepo.selectAllStations());
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnTrainnDto>>(await _TrainDbRepo.selectAllTrains());
   }
 
-  public async Task<ResponseModel> AddStation(AddStationDto stationDto)
+  public async Task<ResponseModel> AddTrain(AddTrainDto TrainDto)
   {
     //First check the authentication 
-    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(stationDto.token_id);
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(TrainDto.token_id);
 
     if(res.Success ==true && res.Data.is_token_valid)
     {
@@ -29,7 +29,7 @@ public class StationService:IStationService
       {
         ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _stationDbRepo.UpsertStation(false,int.Parse(stationDto.station_id),stationDto.station_name,true,res.Data.username)
+            await _TrainDbRepo.UpsertTrain(false,int.Parse(TrainDto.train_id),TrainDto.train_name,true,res.Data.username)
         );
 
         if(returnModel.Success==true)
@@ -63,10 +63,10 @@ public class StationService:IStationService
   
   }
 
-  public async Task<ResponseModel> UpdateStation(AddStationDto stationDto)
+  public async Task<ResponseModel> UpdateTrain(AddTrainDto TrainDto)
   {
     //First check the authentication 
-    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(stationDto.token_id);
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(TrainDto.token_id);
 
     if(res.Success ==true && res.Data.is_token_valid)
     {
@@ -74,7 +74,7 @@ public class StationService:IStationService
       {
         ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _stationDbRepo.UpsertStation(true,int.Parse(stationDto.station_id),stationDto.station_name,true,res.Data.username)
+            await _TrainDbRepo.UpsertTrain(true,int.Parse(TrainDto.train_id),TrainDto.train_name,true,res.Data.username)
         );
 
         if(returnModel.Success==true)
@@ -108,10 +108,10 @@ public class StationService:IStationService
   
   }
 
-  public async Task<ResponseModel> DeleteStation(AddStationDto stationDto)
+  public async Task<ResponseModel> DeleteTrain(AddTrainDto TrainDto)
   {
     //First check the authentication 
-    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(stationDto.token_id);
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(TrainDto.token_id);
 
     if(res.Success ==true && res.Data.is_token_valid)
     {
@@ -119,7 +119,7 @@ public class StationService:IStationService
       {
         return new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _stationDbRepo.UpsertStation(true,int.Parse(stationDto.station_id),stationDto.station_name,false,res.Data.username)
+            await _TrainDbRepo.UpsertTrain(true,int.Parse(TrainDto.train_id),TrainDto.train_name,false,res.Data.username)
         );
 
       }

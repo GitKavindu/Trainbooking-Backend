@@ -44,8 +44,8 @@ public class UserService:IUserService
         token.username=userSubmitModel.UserName;
         token.tokenId=new CommonService().GenerateSha256Hash(token.username+token.recievedDate+token.endDate);
 
-        ResponseModelTyped<string> response= await _userDbRepo.GetToken(token);
-        return new ModdelMapper().ResponseToFormalResponse<string>(response);
+        ResponseModelTyped<IResult> response= await _userDbRepo.GetToken(token);
+        return new ModdelMapper().ResponseToFormalResponse<IResult>(response);
       }
       else if(res.ErrCode!=500)
       {
@@ -53,7 +53,7 @@ public class UserService:IUserService
         {
           Success=false,
             ErrCode=403,
-            Data="authentication failed"
+            Data=new ReturnErrDto("authentication failed")
         };
       }
       else

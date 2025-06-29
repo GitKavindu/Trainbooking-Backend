@@ -3,33 +3,37 @@ using Models;
 using Interfaces;
 namespace Service;
 
-public class StationService:IStationService
+public class JourneyService:IJourneyService
 {
   private IAdminDbRepo _adminDbRepo;
-  private IStationDbRepo  _stationDbRepo;
-  public StationService(IAdminDbRepo adminDbRepo,IStationDbRepo stationDbRepo)
+  private IJourneyDbRepo  _JourneyDbRepo;
+  public JourneyService(IAdminDbRepo adminDbRepo,IJourneyDbRepo JourneyDbRepo)
   {
     _adminDbRepo=adminDbRepo;
-    _stationDbRepo=stationDbRepo;
+    _JourneyDbRepo=JourneyDbRepo;
   }
  
-  public async Task<ResponseModel> GetStations()
+  public async Task<ResponseModel> selectAllJourneys()
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnStationDto>>(await _stationDbRepo.selectAllStations());
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnJourneyStationDto>>(await _JourneyDbRepo.selectAllJourneys());
   }
-
-  public async Task<ResponseModel> AddStation(AddStationDto stationDto)
+  public async Task<ResponseModel> selectAJourney(string schedule_id)
+  {
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnJourneyDto>>( await _JourneyDbRepo.selectAJourney(schedule_id) );
+  }
+  public async Task<ResponseModel> AddJourney(AddJourneyDto JourneyDto)
   {
     //First check the authentication 
-    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(stationDto.token_id);
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(JourneyDto.tokenId);
 
     if(res.Success ==true && res.Data.is_token_valid)
     {
       if(res.Data.is_user_admin==true && res.Data.is_token_valid && res.Data.is_user_active)
       {
+        JourneyDto.scheduleId=new CommonService().GenerateSha256Hash(DateTime.Now.ToString()+JourneyDto.trainId+JourneyDto.trainSeqNo);
         ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _stationDbRepo.UpsertStation(false,int.Parse(stationDto.station_id),stationDto.station_name,true,res.Data.username)
+            await _JourneyDbRepo.AddJourney(JourneyDto,res.Data.username)
         );
 
         if(returnModel.Success==true)
@@ -63,10 +67,10 @@ public class StationService:IStationService
   
   }
 
-  public async Task<ResponseModel> UpdateStation(AddStationDto stationDto)
+  public async Task<ResponseModel> UpdateJourney(AddJourneyDto JourneyDto)
   {
     //First check the authentication 
-    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(stationDto.token_id);
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(JourneyDto.tokenId);
 
     if(res.Success ==true && res.Data.is_token_valid)
     {
@@ -74,7 +78,7 @@ public class StationService:IStationService
       {
         ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _stationDbRepo.UpsertStation(true,int.Parse(stationDto.station_id),stationDto.station_name,true,res.Data.username)
+            await _JourneyDbRepo.UpdateJourney(JourneyDto,res.Data.username)
         );
 
         if(returnModel.Success==true)
@@ -108,20 +112,21 @@ public class StationService:IStationService
   
   }
 
-  public async Task<ResponseModel> DeleteStation(AddStationDto stationDto)
+   public async Task<ResponseModel> DeleteJourney(string scheduleId,string tokenId)
   {
     //First check the authentication 
-    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(stationDto.token_id);
+    ResponseModelTyped<AuthenticateTokenModel> res=await _adminDbRepo.AuthenticateUser(tokenId);
 
     if(res.Success ==true && res.Data.is_token_valid)
     {
       if(res.Data.is_user_admin==true && res.Data.is_token_valid && res.Data.is_user_active)
       {
-        return new ModdelMapper().ResponseToFormalResponse<string>
+        ResponseModel returnModel= new ModdelMapper().ResponseToFormalResponse<string>
         (
-            await _stationDbRepo.UpsertStation(true,int.Parse(stationDto.station_id),stationDto.station_name,false,res.Data.username)
+            await _JourneyDbRepo.DeleteJourney(scheduleId)
         );
 
+        return returnModel;
       }
       else
       {
