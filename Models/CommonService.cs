@@ -1,5 +1,6 @@
 using System.Text;
 using System.Security.Cryptography;
+using System.Globalization;
 namespace Models;
 public class CommonService
 {
@@ -22,12 +23,20 @@ public class CommonService
             return builder.ToString();
         }
     }
+
     public string CleanMessage(Exception ex)
     {
         string[] parts = ex.Message.Split(new[] { ": " }, 2, StringSplitOptions.None);
         string cleanMessage = parts.Length > 1 ? parts[1] : ex.Message;
 
         return cleanMessage;
+    }
+
+    public DateTime CombineDateAndTime(string date, string time)
+    {
+        string combined = $"{date} {time}"; // "2025-06-29 06.00 PM"
+        string format = "yyyy-MM-dd hh:mm tt";
+        return DateTime.ParseExact(combined, format, CultureInfo.InvariantCulture);
     }
     
 }

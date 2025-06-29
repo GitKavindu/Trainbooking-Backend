@@ -17,6 +17,61 @@ public class JourneyDbRepo:IJourneyDbRepo
     
   }
 
+  public async Task<ResponseModelTyped<IEnumerable<ReturnJourneyStationDto>>> selectAllJourneys()
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+
+          // Call the function with the parameters and retrieve the results
+          IEnumerable<ReturnJourneyStationDto> results=await con.QueryAsync<ReturnJourneyStationDto>(
+            @$"SELECT j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
+                        s.station_name AS StartStation,n.station_name AS EndStation,P.schedule_id AS scheduleId
+                FROM (	
+                  SELECT schedule_id,MAX(journey_id) AS maxId,MIN(journey_id) AS minId
+                  FROM journey
+                  WHERE is_active=true
+                  GROUP BY schedule_id
+                ) 	P
+                INNER join journey j on P.minId= j.journey_id
+                INNER join journey t on P.maxId= t.journey_id 
+                INNER join station s on j.seq_no=s.seq_no AND j.station_no=s.station_id
+                INNER join station n on t.seq_no=n.seq_no AND t.station_no=n.station_id"
+            ,para, commandType: CommandType.Text);
+
+          // Return the result
+          return new ResponseModelTyped<IEnumerable<ReturnJourneyStationDto>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = results
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex); 
+            return new ResponseModelTyped<IEnumerable<ReturnJourneyStationDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<ReturnJourneyStationDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }
+
   public async Task<ResponseModelTyped<IEnumerable<ReturnJourneyDto>>> selectAJourney(string schedule_id)
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))

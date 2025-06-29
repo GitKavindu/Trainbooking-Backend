@@ -20,10 +20,10 @@ public class JourneyController: ControllerBase
        _JourneyService=JourneyService;
     }
 
-    [HttpGet("getAJourney")] 
-    public async Task<ResponseModel> GetAJourney(string scheduleId)
+    [HttpGet("getAllSchedules")] 
+    public async Task<ResponseModel> GetAllJourneys()
     {
-      ResponseModel responseModel=await _JourneyService.selectAJourney(scheduleId); 
+      ResponseModel responseModel=await _JourneyService.selectAllJourneys(); 
 
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 

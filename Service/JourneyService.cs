@@ -13,10 +13,10 @@ public class JourneyService:IJourneyService
     _JourneyDbRepo=JourneyDbRepo;
   }
  
-//   public async Task<ResponseModel> GetJourneys()
-//   {
-//     return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnJourneyDto>>(await _JourneyDbRepo.selectAllJourneys());
-//   }
+  public async Task<ResponseModel> selectAllJourneys()
+  {
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnJourneyStationDto>>(await _JourneyDbRepo.selectAllJourneys());
+  }
   public async Task<ResponseModel> selectAJourney(string schedule_id)
   {
     return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnJourneyDto>>( await _JourneyDbRepo.selectAJourney(schedule_id) );

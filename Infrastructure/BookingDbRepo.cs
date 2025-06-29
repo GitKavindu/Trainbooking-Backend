@@ -181,7 +181,8 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnJourneyStationDto> allSeats=await con.QueryAsync<ReturnJourneyStationDto>(
-            @$"SELECT j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,s.station_name AS StartStation,n.station_name AS EndStation
+            @$"SELECT j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
+                        s.station_name AS StartStation,n.station_name AS EndStation
                 FROM journey j
                 INNER join journey t on j.journey_id + 1 = t.journey_id AND j.schedule_id=t.schedule_id
                 inner join station s on j.seq_no=s.seq_no AND j.station_no=s.station_id
