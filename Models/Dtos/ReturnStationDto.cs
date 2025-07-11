@@ -3,6 +3,7 @@ public class ReturnStationDto
 {
   public int ?station_id{get;set;}
   public string ?station_name{get;set;}
+  public int stationSeqNo{get;set;}
   public string ?added_by{get;set;}
 
   private DateTime? _createdDate;

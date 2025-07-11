@@ -30,5 +30,7 @@ namespace Models.Dtos
 
         public string endingDate{get;set;}
         public string endingTime{get;set;}
+
+        public string train{get;set;}
     }
 }
