@@ -29,7 +29,9 @@ public class JourneyDbRepo:IJourneyDbRepo
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnJourneyStationDto> results=await con.QueryAsync<ReturnJourneyStationDto>(
             @$"SELECT j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
-                        s.station_name AS StartStation,n.station_name AS EndStation,P.schedule_id AS scheduleId,st.name AS train
+                      s.station_name AS StartStation,s.station_id AS StartStationId,s.seq_no AS StartSeqNo,
+                      n.station_name AS EndStation,n.station_id AS EndStationId,n.seq_no AS EndSeqNo,
+                      P.schedule_id AS scheduleId,st.name AS train,st.train_no AS trainId,st.seq_no AS trainSeqNo
                 FROM (	
                   SELECT schedule_id,MAX(journey_id) AS maxId,MIN(journey_id) AS minId
                   FROM journey
