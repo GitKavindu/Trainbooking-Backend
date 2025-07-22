@@ -4,6 +4,7 @@ using Npgsql;
 using System.Data;
 using Dapper;
 using Models.Dtos;
+using Newtonsoft.Json;
 namespace Infrastructure;
 
 
@@ -15,6 +16,57 @@ public class JourneyDbRepo:IJourneyDbRepo
   {
     _dbConnectRepo=dbConnectRepo;
     
+  }
+
+  public async Task<ResponseModelTyped<IEnumerable<ReturnStationDto>>> selectStartOrEndStations(bool isStart,string scheduleId)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+
+          para.Add("_is_startlist",isStart);
+          para.Add("_scheduleid",scheduleId);
+          // OUT parameter
+          para.Add("_result", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+          var results=await con.ExecuteAsync
+          (   "CALL public.getStartStationsOrEndStations(@_is_startlist,@_scheduleid,NULL)",
+              para, commandType: CommandType.Text
+          );
+
+          string json = para.Get<string>("_result");
+
+          List<ReturnStationDto> stationList= JsonConvert.DeserializeObject<List<ReturnStationDto>>(json);
+
+          return new ResponseModelTyped<IEnumerable<ReturnStationDto>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = stationList
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            return new ResponseModelTyped<IEnumerable<ReturnStationDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<ReturnStationDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
   }
 
   public async Task<ResponseModelTyped<IEnumerable<ReturnJourneyStationDto>>> selectAllJourneys()

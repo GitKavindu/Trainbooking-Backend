@@ -58,4 +58,14 @@ public class JourneyController: ControllerBase
       return responseModel;
     }
 
+    [HttpGet("selectStartOrEndStations")] 
+    public async Task<ResponseModel> SelectStartOrEndStations(bool isStart,string scheduleId)
+    {
+      ResponseModel responseModel=await _JourneyService.selectStartOrEndStations(isStart,scheduleId); 
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    } 
+
 }
