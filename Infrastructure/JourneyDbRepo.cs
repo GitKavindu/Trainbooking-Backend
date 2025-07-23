@@ -94,7 +94,7 @@ public class JourneyDbRepo:IJourneyDbRepo
                 INNER join journey t on P.maxId= t.journey_id 
                 INNER join station s on j.seq_no=s.seq_no AND j.station_no=s.station_id
                 INNER join station n on t.seq_no=n.seq_no AND t.station_no=n.station_id
-                INNER join train st on j.train_no = st.train_no AND j.seq_no = st.seq_no"
+                INNER join train st on j.train_no = st.train_no AND j.train_seq_no = st.seq_no"
             ,para, commandType: CommandType.Text);
 
           // Return the result
