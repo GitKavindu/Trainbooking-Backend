@@ -7,6 +7,9 @@ public class ReturnTokenDto : IResult
     public string username  { get; set; }
     public DateTime endTime { get; set; }
     public bool isActive { get; set; }
+
+    public string PreferedName { get; set; }
+    public bool isAdmin { get; set; }
 }
 
 public class ReturnErrDto : IResult

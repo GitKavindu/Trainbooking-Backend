@@ -48,4 +48,14 @@ public class UserController : ControllerBase
 
       return responseModel;
     }
+
+    [HttpGet("getTokenDetails/{tokenId}")] 
+    public async Task<ResponseModel> GetTokenDetails(string tokenId)
+    {
+      ResponseModel responseModel=await _userService1.GetTokenDetails(tokenId);  
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    }  
 }

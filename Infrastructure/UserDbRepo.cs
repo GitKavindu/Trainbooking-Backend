@@ -167,9 +167,10 @@ public class UserDbRepo:IUserDbRepo
           para.Add("token_id", newTokenId);
 
           ReturnTokenDto ?returnToken = await con.QueryFirstAsync<ReturnTokenDto>(
-              $@"SELECT end_time AS endtime, username, token_id AS tokenId,is_active AS isActive 
-                  FROM token
-                  WHERE token_id=@token_id",
+              $@"SELECT u.username AS username,u.is_admin AS IsAdmin,u.prefered_name AS preferedName,u.is_active AS isActive,t.end_time AS endtime, token_id AS tokenId
+                  FROM token t
+                  INNER JOIN users u ON u.username = t.username
+                  WHERE t.token_id=@token_id;",
               para, 
               commandType: CommandType.Text
           );
@@ -302,4 +303,60 @@ public class UserDbRepo:IUserDbRepo
     } 
   }
 
+  public async Task<ResponseModelTyped<ReturnUserDto>> GetTokenDetails(string token_id)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para = new DynamicParameters();
+          para.Add("@token_id",token_id); 
+
+          // Call the function with the parameters and retrieve the results
+          ReturnUserDto res=
+            await con.QueryFirstAsync<ReturnUserDto>(
+              @$"SELECT u.username AS UserName,u.is_admin AS IsAdmin,u.prefered_name AS PreferedName,t.is_active AS IsActive 
+                  FROM token t
+                  INNER JOIN users u ON u.username = t.username
+                  WHERE t.token_id=@token_id;",
+            para, commandType: CommandType.Text);
+
+          // Return the result
+          if(res is null)
+          {
+              return new ResponseModelTyped<ReturnUserDto>()
+              {
+                Success = false,
+                ErrCode = 404
+              }; 
+          }
+          return new ResponseModelTyped<ReturnUserDto>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = res
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<ReturnUserDto>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<ReturnUserDto>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    } 
+  }
 }

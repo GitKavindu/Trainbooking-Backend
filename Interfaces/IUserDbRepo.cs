@@ -9,5 +9,5 @@ public interface IUserDbRepo
   Task<ResponseModelTyped<IResult>> GetToken(TokenModel tokenModel);
   Task<ResponseModelTyped<string>> DisableToken(disableTokenModel disableTokenModel);
   Task<ResponseModelTyped<UserDbModel>> CheckUserStatus(string username);
-
+  Task<ResponseModelTyped<ReturnUserDto>> GetTokenDetails(string token_id);
 }

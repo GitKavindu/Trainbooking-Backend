@@ -20,12 +20,6 @@ public class AdminController: ControllerBase
       _adminService=adminService;
     }
 
-    [HttpGet("testing")] 
-    public string Testing()
-    {
-      return "Testing 1";
-    }
-
     [HttpPost("appointAdmin")] 
     public async Task<ResponseModel> AppointAdmin([FromBody] AppointAdmin appointAdmin)
     {
@@ -74,5 +68,5 @@ public class AdminController: ControllerBase
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 
       return responseModel;
-    } 
+    }
 }

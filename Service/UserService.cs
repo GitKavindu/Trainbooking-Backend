@@ -67,5 +67,9 @@ public class UserService:IUserService
     return new ModdelMapper().ResponseToFormalResponse<string>(await _userDbRepo.DisableToken(disableTokenModel));
   }
 
+  public async Task<ResponseModel> GetTokenDetails(string tokenId)
+  {
+    return new ModdelMapper().ResponseToFormalResponse<ReturnUserDto>(await _userDbRepo.GetTokenDetails(tokenId));
+  }
   
 }
