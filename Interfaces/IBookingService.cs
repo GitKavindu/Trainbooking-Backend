@@ -4,9 +4,9 @@ using Models.Dtos;
 namespace Interfaces;
 public interface IBookingService
 {
-  Task<ResponseModel> SelectAllSeatsForJourney(int journeyId);
+  Task<ResponseModel> SelectAllSeatsForJourney(string scheduleId,int apartmentId);
   Task<ResponseModel> SelectSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto);
-  Task<ResponseModel> SelectBookedSeatsForJourney(int fromJourneyId,int toJourneyId,int apartmentId);
+  Task<ResponseModel> SelectBookedSeatsForJourney(string scheduleId,int apartmentId);
   Task<ResponseModel> SelectAllJourneysForSchedule(string scheduleId);
 
   Task<ResponseModel> BookForSchedule(AddBookingDto addBookingDto);

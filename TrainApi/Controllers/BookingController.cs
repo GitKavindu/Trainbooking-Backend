@@ -21,9 +21,9 @@ public class BookingController: ControllerBase
     }
 
     [HttpGet("selectAllSeatsForJourney")] 
-    public async Task<ResponseModel> SelectAllSeatsForJourney(int journeyId)
+    public async Task<ResponseModel> SelectAllSeatsForJourney(string scheduleId,int apartmentId)
     {
-      ResponseModel responseModel=await _BookingService.SelectAllSeatsForJourney(journeyId); 
+      ResponseModel responseModel=await _BookingService.SelectAllSeatsForJourney(scheduleId,apartmentId); 
 
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 
@@ -31,9 +31,9 @@ public class BookingController: ControllerBase
     } 
 
     [HttpGet("selectBookedSeatsForJourney")] 
-    public async Task<ResponseModel> SelectBookedSeatsForJourney(int fromJourneyId,int toJourneyId,int apartmentId)
+    public async Task<ResponseModel> SelectBookedSeatsForJourney(string scheduleId,int apartmentId)
     {
-      ResponseModel responseModel=await _BookingService.SelectBookedSeatsForJourney(fromJourneyId,toJourneyId,apartmentId); 
+      ResponseModel responseModel=await _BookingService.SelectBookedSeatsForJourney(scheduleId,apartmentId); 
 
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 

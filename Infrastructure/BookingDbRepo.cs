@@ -19,7 +19,7 @@ public class BookingDbRepo:IBookingDbRepo
     
   }
 
-  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectAllSeatsForJourney(int journeyId) 
+  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectAllSeatsForJourney(string scheduleId,int apartmentId) 
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
@@ -27,15 +27,22 @@ public class BookingDbRepo:IBookingDbRepo
         try
         {
           DynamicParameters para=new DynamicParameters();
-           para.Add("journey_id",journeyId);
+          para.Add("schedule_id",scheduleId);
+          para.Add("apartment_id",apartmentId);
           
+          int startJourneyId=await con.QueryFirstAsync<int>(
+            @$"SELECT MIN(journey_id) FROM journey WHERE schedule_id=@schedule_id"
+            ,para, commandType: CommandType.Text);
+
+          para.Add("journey_id",startJourneyId);
+
           // Call the function with the parameters and retrieve the results
           IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(
-            @$"SELECT j.journey_id,j.train_no,j.train_seq_no,j.schedule_id,s.seat_id,s.is_left AS isLeft,s.row_no AS rowNo,s.seq_no AS seqNo,s.apartment_id AS apartmentId
-                FROM journey j 
-                INNER JOIN apartments a ON j.train_no=a.train_id AND j.train_seq_no=a.train_seq_no
+            @$"SELECT s.is_left AS isLeft,s.row_no AS rowNo,s.seq_no AS seqNo,s.apartment_id AS apartmentId
+                FROM journey js
+                INNER JOIN apartments a ON js.train_no=a.train_id AND js.train_seq_no=a.train_seq_no
                 INNER JOIN seat s ON s.apartment_id = a.apartment_id
-                WHERE j.journey_id=@journey_id
+                WHERE js.journey_id=@journey_id AND a.is_active=true AND a.apartment_id=@apartment_id
                 ORDER BY s.row_no,s.is_left,s.seq_no"
             ,para, commandType: CommandType.Text);
 
@@ -132,7 +139,7 @@ public class BookingDbRepo:IBookingDbRepo
     }
   }  
 
-  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForApartment(int fromJourneyId,int ToJourneyId,int apartmentId) 
+  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForApartment(string scheduleId,int apartmentId) 
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
@@ -140,9 +147,20 @@ public class BookingDbRepo:IBookingDbRepo
         try
         {
           DynamicParameters para=new DynamicParameters();
-          para.Add("from_journey_id",fromJourneyId);
-          para.Add("to_journey_id",ToJourneyId);
           para.Add("apartment_id",apartmentId);
+          para.Add("schedule_id",scheduleId);
+
+          int startJourneyId=await con.QueryFirstAsync<int>(
+            @$"SELECT MIN(journey_id) FROM journey WHERE schedule_id=@schedule_id"
+            ,para, commandType: CommandType.Text);
+
+          int endJourneyId=await con.QueryFirstAsync<int>(
+            @$"SELECT MIN(journey_id) FROM journey WHERE schedule_id=@schedule_id"
+            ,para, commandType: CommandType.Text);
+
+          para.Add("from_journey_id",startJourneyId);
+          para.Add("to_journey_id",endJourneyId);
+          
           
           // Call the function with the parameters and retrieve the results
           IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(

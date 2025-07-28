@@ -19,9 +19,9 @@ public class BookingService:IBookingService
     _apartmentDbRepo=apartmentDbRepo;
   }
 
-  public async Task<ResponseModel> SelectAllSeatsForJourney(int journeyId)
+  public async Task<ResponseModel> SelectAllSeatsForJourney(string scheduleId,int apartmentId)
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectAllSeatsForJourney(journeyId));
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectAllSeatsForJourney(scheduleId,apartmentId));
   }
 
   public async Task<ResponseModel> SelectSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto)
@@ -29,9 +29,9 @@ public class BookingService:IBookingService
     return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnSortedSchedulesDto>>(await _BookingDbRepo.getSortedSchedules(getSortedSchedulesDto));
   }
 
-  public async Task<ResponseModel> SelectBookedSeatsForJourney(int fromjourneyId,int tojourneyId,int apartmentId)
+  public async Task<ResponseModel> SelectBookedSeatsForJourney(string scheduleId,int apartmentId)
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectBookedSeatsForApartment(fromjourneyId,tojourneyId,apartmentId));
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectBookedSeatsForApartment(scheduleId,apartmentId));
   }
 
   public async Task<ResponseModel> SelectAllJourneysForSchedule(string scheduleId)
