@@ -80,4 +80,13 @@ public class BookingController: ControllerBase
       return responseModel;
     }
 
+    [HttpPost("selectSortedSchedules")] 
+    public async Task<ResponseModel> SelectSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto)
+    {
+      ResponseModel responseModel=await _BookingService.SelectSortedSchedules(getSortedSchedulesDto);
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    }
 }

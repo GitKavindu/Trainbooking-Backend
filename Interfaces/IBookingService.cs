@@ -5,6 +5,7 @@ namespace Interfaces;
 public interface IBookingService
 {
   Task<ResponseModel> SelectAllSeatsForJourney(int journeyId);
+  Task<ResponseModel> SelectSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto);
   Task<ResponseModel> SelectBookedSeatsForJourney(int fromJourneyId,int toJourneyId,int apartmentId);
   Task<ResponseModel> SelectAllJourneysForSchedule(string scheduleId);
 

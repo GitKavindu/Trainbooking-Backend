@@ -5,6 +5,7 @@ using Dapper;
 using Npgsql;
 using System.Data;
 using NpgsqlTypes;
+using System.Text.Json;
 
 namespace Infrastructure;
 
@@ -66,7 +67,70 @@ public class BookingDbRepo:IBookingDbRepo
             };
         }
     }
-  } 
+  }
+
+  public async Task<ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>> getSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto) 
+  {
+    //Console.WriteLine(JsonSerializer.Serialize(getSortedSchedulesDto));
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+           para.Add("startStationId",getSortedSchedulesDto.startStationId);
+           para.Add("startStationSeqNo",getSortedSchedulesDto.startStationSeqNo);
+           para.Add("scheduledStartTime",getSortedSchedulesDto.scheduledStartTime);
+
+           para.Add("endStationId",getSortedSchedulesDto.endStationId);
+           para.Add("endStationSeqNo",getSortedSchedulesDto.endStationSeqNo);
+           para.Add("scheduledEndTime",getSortedSchedulesDto.scheduledEndTime);
+                     
+          // Call the function with the parameters and retrieve the results
+          IEnumerable<ReturnSortedSchedulesDto> allSeats=await con.QueryAsync<ReturnSortedSchedulesDto>(
+            @$"select ja.schedule_id AS scheduleId,ja.journey_id AS startJourneyId,je.journey_id AS endJourneyId,
+                    ja.scheduled_start_time AS scheduledStartTime,sa.station_id AS startStationId,sa.seq_no AS startSeqNo,sa.station_name AS startStationName,
+                    je.scheduled_start_time AS scheduledEndTime,se.station_id AS endStationId,se.seq_no AS endSeqNo,se.station_name AS endStationName,
+                    t.train_no AS trainId,t.seq_no AS trainSeqNo,t.name AS trainName
+                from journey ja
+                inner join journey je on ja.schedule_id=je.schedule_id and ja.scheduled_start_time < je.scheduled_start_time
+                inner join station sa on ja.station_no=sa.station_id and ja.seq_no=sa.seq_no
+                inner join station se on je.station_no=se.station_id and je.seq_no=se.seq_no
+                inner join train t on ja.train_no = t.train_no and ja.train_seq_no=t.seq_no
+                where ja.station_no=@startStationId and ja.seq_no=@startStationSeqNo and ja.is_active=true and ja.scheduled_start_time >=@scheduledStartTime and
+                    je.station_no=@endStationId and je.seq_no=@endStationSeqNo and je.is_active=true and je.scheduled_start_time <= @scheduledEndTime
+                ORDER BY ja.scheduled_start_time"
+            ,para, commandType: CommandType.Text);
+
+          
+          return new ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = allSeats
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }  
 
   public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForApartment(int fromJourneyId,int ToJourneyId,int apartmentId) 
   {

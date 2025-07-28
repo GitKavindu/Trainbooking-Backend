@@ -24,6 +24,11 @@ public class BookingService:IBookingService
     return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectAllSeatsForJourney(journeyId));
   }
 
+  public async Task<ResponseModel> SelectSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto)
+  {
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnSortedSchedulesDto>>(await _BookingDbRepo.getSortedSchedules(getSortedSchedulesDto));
+  }
+
   public async Task<ResponseModel> SelectBookedSeatsForJourney(int fromjourneyId,int tojourneyId,int apartmentId)
   {
     return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectBookedSeatsForApartment(fromjourneyId,tojourneyId,apartmentId));
