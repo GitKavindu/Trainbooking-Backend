@@ -26,7 +26,58 @@ public class BookingService:IBookingService
 
   public async Task<ResponseModel> SelectSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto)
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnSortedSchedulesDto>>(await _BookingDbRepo.getSortedSchedules(getSortedSchedulesDto));
+    if(getSortedSchedulesDto.scheduledStartTime==DateTime.MinValue)
+    {
+      return new ResponseModel
+      {
+          Success=false,
+          ErrCode=400,
+          Data="Start date or time not in valid format"
+      };
+    }
+
+    if(getSortedSchedulesDto.scheduledEndTime==DateTime.MinValue)
+    {
+      ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>> returnSortedSchedulesDto=await _BookingDbRepo.getSortedSchedules(getSortedSchedulesDto,true);
+      return await getStartDestDetails(returnSortedSchedulesDto);      
+    }      
+    else
+    {
+      ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>> returnSortedSchedulesDto=await _BookingDbRepo.getSortedSchedules(getSortedSchedulesDto,false);
+      return await getStartDestDetails(returnSortedSchedulesDto);  
+    }
+  }
+
+  private async Task<ResponseModel> getStartDestDetails(ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>> returnSortedSchedulesDto)
+  {
+    ReturnSortedSchedulesDto[] returnSortedSchedulesDtoArr;
+      if(returnSortedSchedulesDto.Success==true && returnSortedSchedulesDto.Data.Count() != 0)
+      {
+        returnSortedSchedulesDtoArr=returnSortedSchedulesDto.Data.ToArray();
+        foreach(var i in returnSortedSchedulesDtoArr)
+        {
+          ResponseModelTyped<ReturnJourneyStationDto> returnJourneyDto=await _journeyDbRepo.selectAJourney(i.scheduleId);
+          if(returnJourneyDto.Success==true)
+          {
+            i.startDestDetails=returnJourneyDto.Data;
+          }
+          else
+          {
+            i.startDestDetails=null;
+          }
+        }
+      }
+      else
+      {
+        return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnSortedSchedulesDto>>(returnSortedSchedulesDto);
+      }
+      
+      return new ResponseModel()
+      {
+        Success=true,
+        ErrCode=200,
+        Data=returnSortedSchedulesDtoArr
+      };
   }
 
   public async Task<ResponseModel> SelectBookedSeatsForJourney(string scheduleId,int apartmentId)

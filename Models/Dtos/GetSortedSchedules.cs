@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Models.Dtos;
 public class GetSortedSchedulesDto
 {
@@ -25,7 +27,10 @@ public class GetSortedSchedulesDto
     {
         get
         {
-            return new CommonService().CombineDateAndTime(_startDate,_startTime);
+            if(validateStartDate()==true)
+                return new CommonService().CombineDateAndTime(_startDate,_startTime);
+            else
+                return new DateTime();
         }
     }
 
@@ -55,8 +60,30 @@ public class GetSortedSchedulesDto
     {
         get
         {
-            return new CommonService().CombineDateAndTime(_endDate,_endTime);
+            if(validateEndDate()==true)
+                return new CommonService().CombineDateAndTime(_endDate,_endTime);
+            else
+                return new DateTime();
         }
     }
 
-}
+    private bool validateDate(string input)
+    {
+        return DateTime.TryParseExact(input,"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out _);
+    }
+
+    private bool validateTime(string input)
+    {
+        return DateTime.TryParseExact(input,"hh:mm tt",CultureInfo.InvariantCulture,DateTimeStyles.None,out _);
+    }
+
+    private bool validateStartDate()
+    {
+        return validateDate(_startDate) && validateTime(_startTime);
+    }
+    
+    private bool validateEndDate()
+    {
+        return validateDate(_endDate) && validateTime(_endTime);
+    }
+}   

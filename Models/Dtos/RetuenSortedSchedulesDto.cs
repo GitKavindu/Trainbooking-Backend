@@ -68,4 +68,6 @@ public class ReturnSortedSchedulesDto
         }
     }
 
+    public ReturnJourneyStationDto startDestDetails{get;set;}
+
 }

@@ -5,7 +5,7 @@ namespace Interfaces;
 public interface IBookingDbRepo
 {
   Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectAllSeatsForJourney(string scheduleId,int apartmentId);
-  Task<ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>> getSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto);
+  Task<ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>> getSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto,bool onlyStart);
   Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForApartment(string scheduleId,int apartmentId);
   Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForTrain(int fromJourneyId,int ToJourneyId,int trainId,int trainSeqNo);
   Task<ResponseModelTyped<IEnumerable<ReturnJourneyStationDto>>> SelectAllJourneysForSchedule(string scheduleId);

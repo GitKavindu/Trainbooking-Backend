@@ -23,7 +23,7 @@ public class JourneyService:IJourneyService
   }
   public async Task<ResponseModel> selectAJourney(string schedule_id)
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnJourneyDto>>( await _JourneyDbRepo.selectAJourney(schedule_id) );
+    return new ModdelMapper().ResponseToFormalResponse<ReturnJourneyStationDto>( await _JourneyDbRepo.selectAJourney(schedule_id) );
   }
   public async Task<ResponseModel> AddJourney(AddJourneyDto JourneyDto)
   {

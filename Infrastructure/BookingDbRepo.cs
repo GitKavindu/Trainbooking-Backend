@@ -16,7 +16,6 @@ public class BookingDbRepo:IBookingDbRepo
   public BookingDbRepo(IDbConnectRepo dbConnectRepo)
   {
     _dbConnectRepo=dbConnectRepo;
-    
   }
 
   public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectAllSeatsForJourney(string scheduleId,int apartmentId) 
@@ -76,7 +75,7 @@ public class BookingDbRepo:IBookingDbRepo
     }
   }
 
-  public async Task<ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>> getSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto) 
+  public async Task<ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>> getSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto,bool onlyStart) 
   {
     //Console.WriteLine(JsonSerializer.Serialize(getSortedSchedulesDto));
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
@@ -91,10 +90,15 @@ public class BookingDbRepo:IBookingDbRepo
 
            para.Add("endStationId",getSortedSchedulesDto.endStationId);
            para.Add("endStationSeqNo",getSortedSchedulesDto.endStationSeqNo);
-           para.Add("scheduledEndTime",getSortedSchedulesDto.scheduledEndTime);
+           para.Add("scheduledEndTime",getSortedSchedulesDto.scheduledEndTime);           
                      
           // Call the function with the parameters and retrieve the results
-          IEnumerable<ReturnSortedSchedulesDto> allSeats=await con.QueryAsync<ReturnSortedSchedulesDto>(
+
+          IEnumerable<ReturnSortedSchedulesDto> allSeats;
+
+          if(onlyStart==false)
+          {
+            allSeats=await con.QueryAsync<ReturnSortedSchedulesDto>(
             @$"select ja.schedule_id AS scheduleId,ja.journey_id AS startJourneyId,je.journey_id AS endJourneyId,
                     ja.scheduled_start_time AS scheduledStartTime,sa.station_id AS startStationId,sa.seq_no AS startSeqNo,sa.station_name AS startStationName,
                     je.scheduled_start_time AS scheduledEndTime,se.station_id AS endStationId,se.seq_no AS endSeqNo,se.station_name AS endStationName,
@@ -108,6 +112,26 @@ public class BookingDbRepo:IBookingDbRepo
                     je.station_no=@endStationId and je.seq_no=@endStationSeqNo and je.is_active=true and je.scheduled_start_time <= @scheduledEndTime
                 ORDER BY ja.scheduled_start_time"
             ,para, commandType: CommandType.Text);
+
+
+          }
+          else
+          {
+              allSeats=await con.QueryAsync<ReturnSortedSchedulesDto>(
+              @$"select ja.schedule_id AS scheduleId,ja.journey_id AS startJourneyId,je.journey_id AS endJourneyId,
+                      ja.scheduled_start_time AS scheduledStartTime,sa.station_id AS startStationId,sa.seq_no AS startSeqNo,sa.station_name AS startStationName,
+                      je.scheduled_start_time AS scheduledEndTime,se.station_id AS endStationId,se.seq_no AS endSeqNo,se.station_name AS endStationName,
+                      t.train_no AS trainId,t.seq_no AS trainSeqNo,t.name AS trainName
+                  from journey ja
+                  inner join journey je on ja.schedule_id=je.schedule_id and ja.scheduled_start_time < je.scheduled_start_time
+                  inner join station sa on ja.station_no=sa.station_id and ja.seq_no=sa.seq_no
+                  inner join station se on je.station_no=se.station_id and je.seq_no=se.seq_no
+                  inner join train t on ja.train_no = t.train_no and ja.train_seq_no=t.seq_no
+                  where ja.station_no=@startStationId and ja.seq_no=@startStationSeqNo and ja.is_active=true and ja.scheduled_start_time >=@scheduledStartTime and
+                      je.station_no=@endStationId and je.seq_no=@endStationSeqNo and je.is_active=true
+                  ORDER BY ja.scheduled_start_time"
+              ,para, commandType: CommandType.Text);
+          }
 
           
           return new ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>()
