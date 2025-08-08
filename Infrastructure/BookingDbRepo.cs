@@ -347,10 +347,11 @@ public class BookingDbRepo:IBookingDbRepo
                 para.Add("booked_by",bookedUser);
                 para.Add("is_canceled",false);
                 para.Add("netprice",netPrice);
+                 para.Add("bookingDate",DateTime.Now);
   
                 int booking_id=await con.ExecuteScalarAsync<int>
-                (   @"INSERT INTO booking(schedule_id,booked_by,is_canceled,netprice) 
-                      VALUES (@schedule_id,@booked_by,@is_canceled,@netprice)
+                (   @"INSERT INTO booking(schedule_id,booked_by,is_canceled,netprice,bookingDate) 
+                      VALUES (@schedule_id,@booked_by,@is_canceled,@netprice,@bookingDate)
                       RETURNING booking_id",
                     para, commandType: CommandType.Text
                 );             
