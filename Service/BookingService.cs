@@ -79,10 +79,15 @@ public class BookingService:IBookingService
         Data=returnSortedSchedulesDtoArr
       };
   }
-
-  public async Task<ResponseModel> SelectBookedSeatsForJourney(string scheduleId,int apartmentId)
+  
+  public async Task<ResponseModel> SelectBookedSeatsForApartment(int fromJourneyId,int ToJourneyId,int apartmentId)
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectBookedSeatsForApartment(scheduleId,apartmentId));
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectBookedSeatsForApartment(fromJourneyId,ToJourneyId,apartmentId));
+  }
+
+  public async Task<ResponseModel> SelectBookingsForUser(string tokenId)
+  {
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnBookingDetailsDto>>(await _BookingDbRepo.SelectBookingsForUser(tokenId));
   }
 
   public async Task<ResponseModel> SelectAllJourneysForSchedule(string scheduleId)

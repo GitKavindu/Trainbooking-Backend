@@ -30,10 +30,10 @@ public class BookingController: ControllerBase
       return responseModel;
     } 
 
-    [HttpGet("selectBookedSeatsForJourney")] 
-    public async Task<ResponseModel> SelectBookedSeatsForJourney(string scheduleId,int apartmentId)
+    [HttpGet("selectBookedSeatsForJourney")]
+    public async Task<ResponseModel> SelectBookedSeatsForApartment(int fromJourneyId,int ToJourneyId,int apartmentId)
     {
-      ResponseModel responseModel=await _BookingService.SelectBookedSeatsForJourney(scheduleId,apartmentId); 
+      ResponseModel responseModel=await _BookingService.SelectBookedSeatsForApartment(fromJourneyId,ToJourneyId,apartmentId); 
 
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 
@@ -84,6 +84,16 @@ public class BookingController: ControllerBase
     public async Task<ResponseModel> SelectSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto)
     {
       ResponseModel responseModel=await _BookingService.SelectSortedSchedules(getSortedSchedulesDto);
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    }
+
+    [HttpPost("selectBookingsForUser")] 
+    public async Task<ResponseModel> SelectBookingsForUser(disableTokenModel disableTokenModel)
+    {
+      ResponseModel responseModel=await _BookingService.SelectBookingsForUser(disableTokenModel.tokenId); 
 
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 

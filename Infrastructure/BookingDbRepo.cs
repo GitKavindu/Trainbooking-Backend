@@ -163,7 +163,7 @@ public class BookingDbRepo:IBookingDbRepo
     }
   }  
 
-  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForApartment(string scheduleId,int apartmentId) 
+  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForApartment(int fromJourneyId,int ToJourneyId,int apartmentId) 
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
@@ -171,27 +171,17 @@ public class BookingDbRepo:IBookingDbRepo
         try
         {
           DynamicParameters para=new DynamicParameters();
+          para.Add("from_journey_id",fromJourneyId);
+          para.Add("to_journey_id",ToJourneyId);
           para.Add("apartment_id",apartmentId);
-          para.Add("schedule_id",scheduleId);
-
-          int startJourneyId=await con.QueryFirstAsync<int>(
-            @$"SELECT MIN(journey_id) FROM journey WHERE schedule_id=@schedule_id"
-            ,para, commandType: CommandType.Text);
-
-          int endJourneyId=await con.QueryFirstAsync<int>(
-            @$"SELECT MIN(journey_id) FROM journey WHERE schedule_id=@schedule_id"
-            ,para, commandType: CommandType.Text);
-
-          para.Add("from_journey_id",startJourneyId);
-          para.Add("to_journey_id",endJourneyId);
-          
           
           // Call the function with the parameters and retrieve the results
           IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(
             @$"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo,s.apartment_id AS apartmentId 
-                FROM booking_journey b
-                INNER JOIN seat s ON b.seat_id=s.seat_id
-                WHERE b.journey_id>=@from_journey_id AND b.journey_id<=@to_journey_id AND s.apartment_id=@apartment_id"
+                FROM booking_journey bj
+                INNER JOIN booking b ON bj.booking_id=b.booking_id
+                INNER JOIN seat s ON bj.seat_id=s.seat_id
+                WHERE bj.journey_id>=@from_journey_id AND bj.journey_id<=@to_journey_id AND s.apartment_id=@apartment_id AND b.is_canceled=false"
             ,para, commandType: CommandType.Text);
 
           
@@ -222,7 +212,8 @@ public class BookingDbRepo:IBookingDbRepo
             };
         }
     }
-  } 
+  }
+   
    public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForTrain(int fromJourneyId,int ToJourneyId,int trainId,int trainSeqNo)
    {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
@@ -327,6 +318,56 @@ public class BookingDbRepo:IBookingDbRepo
         }
     }
   }
+
+  public async Task<ResponseModelTyped<IEnumerable<ReturnBookingDetailsDto>>> SelectBookingsForUser(string tokenId) 
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+          para.Add("token_id",tokenId);
+          
+          // Call the function with the parameters and retrieve the results
+          IEnumerable<ReturnBookingDetailsDto> allSeats=await con.QueryAsync<ReturnBookingDetailsDto>(
+            @$"SELECT booking_id AS bookingId,netPrice AS price,is_canceled AS isCanceled,bookingDate AS bookingDateTime
+                FROM booking b
+                INNER JOIN (
+                  SELECT username FROM token WHERE token.token_id=@token_id) t 
+                ON t.username=b.booked_by"
+            ,para, commandType: CommandType.Text);
+
+          
+          return new ResponseModelTyped<IEnumerable<ReturnBookingDetailsDto>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = allSeats
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<IEnumerable<ReturnBookingDetailsDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<ReturnBookingDetailsDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }
+
 
   public async Task<ResponseModelTyped<string>> BookForSchedule
   (
@@ -452,7 +493,7 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           ReturnBookingDetailsDto bookingDetails=await con.QueryFirstAsync<ReturnBookingDetailsDto>(
-            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled 
+            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,bookingDate AS
                 FROM booking b
                 INNER JOIN journey j ON b.schedule_id=j.schedule_id AND j.is_active=true
                 WHERE booking_id=@booking_id
