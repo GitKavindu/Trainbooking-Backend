@@ -6,6 +6,8 @@ namespace Models.Dtos
 
         public string ?bookedBy{get;set;}
 
+        public string ?trainName{get;set;}
+
         public float price{get;set;}
 
         public bool isCanceled{get;set;}

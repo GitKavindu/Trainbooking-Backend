@@ -90,7 +90,7 @@ public class BookingController: ControllerBase
       return responseModel;
     }
 
-    [HttpPost("selectBookingsForUser")] 
+    [HttpPost("selectMyBookings")] 
     public async Task<ResponseModel> SelectBookingsForUser(disableTokenModel disableTokenModel)
     {
       ResponseModel responseModel=await _BookingService.SelectBookingsForUser(disableTokenModel.tokenId); 

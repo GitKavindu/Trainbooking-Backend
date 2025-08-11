@@ -331,11 +331,13 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnBookingDetailsDto> allSeats=await con.QueryAsync<ReturnBookingDetailsDto>(
-            @$"SELECT booking_id AS bookingId,netPrice AS price,is_canceled AS isCanceled,bookingDate AS bookingDateTime
-                FROM booking b
-                INNER JOIN (
-                  SELECT username FROM token WHERE token.token_id=@token_id) t 
-                ON t.username=b.booked_by"
+          @$"SELECT booking_id AS bookingId,netPrice AS price,is_canceled AS isCanceled,bookingDate AS bookingDateTime,jt.name AS trainName
+              FROM booking b
+              INNER JOIN (
+                SELECT username FROM token WHERE token_id=@token_id) t ON t.username=b.booked_by
+              INNER JOIN journey j ON b.schedule_id=j.schedule_id AND j.is_active=true
+              INNER JOIN train jt ON jt.train_no = j.train_no AND jt.seq_no = j.train_seq_no
+              GROUP BY booking_id,booked_by,netPrice,is_canceled,j.schedule_id,jt.name"
             ,para, commandType: CommandType.Text);
 
           
@@ -493,11 +495,12 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           ReturnBookingDetailsDto bookingDetails=await con.QueryFirstAsync<ReturnBookingDetailsDto>(
-            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,bookingDate AS
+            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,bookingDate,t.name AS trainName
                 FROM booking b
                 INNER JOIN journey j ON b.schedule_id=j.schedule_id AND j.is_active=true
+				        INNER JOIN train t ON t.train_no = j.train_no AND t.seq_no = j.train_seq_no
                 WHERE booking_id=@booking_id
-                GROUP BY booking_id,booked_by,netPrice,is_canceled,j.schedule_id"
+                GROUP BY booking_id,booked_by,netPrice,is_canceled,j.schedule_id,t.name"
             ,para, commandType: CommandType.Text);
 
           IEnumerable<SeatModel> seatsBooked=await con.QueryAsync<SeatModel>(
