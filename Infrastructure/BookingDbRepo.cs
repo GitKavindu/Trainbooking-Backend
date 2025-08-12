@@ -495,7 +495,7 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           ReturnBookingDetailsDto bookingDetails=await con.QueryFirstAsync<ReturnBookingDetailsDto>(
-            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,bookingDate,t.name AS trainName
+            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,bookingDate AS bookingDateTime,t.name AS trainName
                 FROM booking b
                 INNER JOIN journey j ON b.schedule_id=j.schedule_id AND j.is_active=true
 				        INNER JOIN train t ON t.train_no = j.train_no AND t.seq_no = j.train_seq_no
