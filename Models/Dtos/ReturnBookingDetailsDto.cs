@@ -8,7 +8,17 @@ namespace Models.Dtos
 
         public string ?trainName{get;set;}
 
-        public float price{get;set;}
+        private decimal _price;
+        public decimal price{
+            get
+            {
+                return _price;
+            }
+            set
+            {
+                _price=Math.Round(value, 2);
+            }
+        }
 
         public bool isCanceled{get;set;}
         

@@ -415,9 +415,9 @@ public class BookingService:IBookingService
   }
   
   //calculate Refund Price for canceled bookings
-  private static async Task<float> refundPrice(float price)
+  private static async Task<decimal> refundPrice(decimal price)
   {
     //dummy code
-    return price*0.80f;
+    return price*0.80m;
   }
 }

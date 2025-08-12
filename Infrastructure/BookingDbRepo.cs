@@ -543,7 +543,7 @@ public class BookingDbRepo:IBookingDbRepo
     }
   }
 
-  public async Task<ResponseModelTyped<string>> CancelBooking(int bookingId,float refundPrice) 
+  public async Task<ResponseModelTyped<string>> CancelBooking(int bookingId,decimal refundPrice) 
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
