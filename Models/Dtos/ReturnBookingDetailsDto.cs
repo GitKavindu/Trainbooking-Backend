@@ -6,7 +6,14 @@ namespace Models.Dtos
 
         public string ?bookedBy{get;set;}
 
+        public string ?scheduleId{get;set;}
+
         public string ?trainName{get;set;}
+
+        public int fromStationNo{get;set;}
+        public int fromStationSeqNo{get;set;}
+        public int toStationNo{get;set;}
+        public int toStationSeqNo{get;set;}
 
         private decimal _price;
         public decimal price{

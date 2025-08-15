@@ -181,7 +181,9 @@ public class BookingDbRepo:IBookingDbRepo
                 FROM booking_journey bj
                 INNER JOIN booking b ON bj.booking_id=b.booking_id
                 INNER JOIN seat s ON bj.seat_id=s.seat_id
-                WHERE bj.journey_id>=@from_journey_id AND bj.journey_id<=@to_journey_id AND s.apartment_id=@apartment_id AND b.is_canceled=false"
+                WHERE ( (b.from_journey_id<=@from_journey_id AND b.to_journey_id>@from_journey_id) OR
+						            (b.from_journey_id<@to_journey_id AND b.to_journey_id>=@to_journey_id) ) AND 
+                      s.apartment_id=@apartment_id AND b.is_canceled=false"
             ,para, commandType: CommandType.Text);
 
           
@@ -234,7 +236,9 @@ public class BookingDbRepo:IBookingDbRepo
 				        INNER JOIN booking b ON bj.booking_id=b.booking_id AND b.is_canceled=false
                 INNER JOIN seat s ON bj.seat_id=s.seat_id
                 INNER JOIN apartments a ON s.apartment_id=a.apartment_id
-                WHERE bj.journey_id>=@from_journey_id AND bj.journey_id<=@to_journey_id AND a.train_id=@train_id AND a.train_seq_no=@train_seq_no"
+                WHERE ( (b.from_journey_id<=@from_journey_id AND b.to_journey_id>@from_journey_id) OR
+						            (b.from_journey_id<@to_journey_id AND b.to_journey_id>=@to_journey_id) ) AND 
+                      b.is_canceled=false AND a.train_id=@train_id AND a.train_seq_no=@train_seq_no"
             ,para, commandType: CommandType.Text);
 
           
@@ -390,11 +394,13 @@ public class BookingDbRepo:IBookingDbRepo
                 para.Add("booked_by",bookedUser);
                 para.Add("is_canceled",false);
                 para.Add("netprice",netPrice);
-                 para.Add("bookingDate",DateTime.Now);
+                para.Add("bookingDate",DateTime.Now);
+                para.Add("from_journey_id",addBookingDto.fromJourneyId);
+                para.Add("to_journey_id",addBookingDto.ToJourneyId);
   
                 int booking_id=await con.ExecuteScalarAsync<int>
-                (   @"INSERT INTO booking(schedule_id,booked_by,is_canceled,netprice,bookingDate) 
-                      VALUES (@schedule_id,@booked_by,@is_canceled,@netprice,@bookingDate)
+                (   @"INSERT INTO booking(schedule_id,booked_by,is_canceled,netprice,bookingDate,from_journey_id,to_journey_id) 
+                      VALUES (@schedule_id,@booked_by,@is_canceled,@netprice,@bookingDate,@from_journey_id,@to_journey_id)
                       RETURNING booking_id",
                     para, commandType: CommandType.Text
                 );             
@@ -442,11 +448,11 @@ public class BookingDbRepo:IBookingDbRepo
   {
      
     DynamicParameters para=new DynamicParameters();
-    string sql=$"INSERT INTO booking_journey(booking_id,journey_id,price,seat_id,schedule_id) VALUES ";
+    string sql=$"INSERT INTO booking_journey(booking_id,price,seat_id,schedule_id) VALUES ";
 
     for(int i=0;i<seatModel.Length;i++)
     {
-        sql=sql+@$"(@booking_id{i},@journey_id{i},@price{i},
+        sql=sql+@$"(@booking_id{i},@price{i},
                     (select seat_id from seat where is_left=@is_left{i} AND row_no=@row_no{i} AND seq_no=@seq_no{i} AND apartment_id=@apartment_id{i}),
                     @schedule_id{i})";
 
@@ -460,7 +466,6 @@ public class BookingDbRepo:IBookingDbRepo
         }
 
         para.Add($"booking_id{i}",bookingId); 
-        para.Add($"journey_id{i}",fromJourneyId);
         para.Add($"price{i}",prices[i]);
         para.Add($"is_left{i}",seatModel[i].isLeft);
         para.Add($"row_no{i}",seatModel[i].rowNo);
@@ -495,12 +500,15 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           ReturnBookingDetailsDto bookingDetails=await con.QueryFirstAsync<ReturnBookingDetailsDto>(
-            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,bookingDate AS bookingDateTime,t.name AS trainName
+            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,
+                      bookingDate AS bookingDateTime,st.name AS trainName,sj.schedule_id AS scheduleId,
+                      sj.station_no AS fromStationNo,sj.seq_no AS fromStationSeqNo,ej.station_no AS toStationNo,ej.seq_no AS toStationSeqNo
                 FROM booking b
-                INNER JOIN journey j ON b.schedule_id=j.schedule_id AND j.is_active=true
-				        INNER JOIN train t ON t.train_no = j.train_no AND t.seq_no = j.train_seq_no
-                WHERE booking_id=@booking_id
-                GROUP BY booking_id,booked_by,netPrice,is_canceled,j.schedule_id,t.name"
+                INNER JOIN journey sj ON b.from_journey_id=sj.journey_id AND sj.is_active=true
+                INNER JOIN journey ej ON b.to_journey_id=ej.journey_id AND ej.is_active=true
+                INNER JOIN train st ON st.train_no = sj.train_no AND st.seq_no = sj.train_seq_no
+                INNER JOIN train et ON et.train_no = ej.train_no AND et.seq_no = ej.train_seq_no
+                WHERE booking_id=7"
             ,para, commandType: CommandType.Text);
 
           IEnumerable<SeatModel> seatsBooked=await con.QueryAsync<SeatModel>(
