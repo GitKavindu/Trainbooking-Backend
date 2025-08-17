@@ -10,6 +10,9 @@ namespace Models.Dtos
 
         public string ?trainName{get;set;}
 
+        public int trainNo{get;set;}
+        public int trainSeqNo{get;set;}
+
         public int fromStationNo{get;set;}
         public int fromStationSeqNo{get;set;}
         public int toStationNo{get;set;}

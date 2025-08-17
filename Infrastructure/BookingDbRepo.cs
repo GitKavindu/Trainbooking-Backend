@@ -501,14 +501,14 @@ public class BookingDbRepo:IBookingDbRepo
           // Call the function with the parameters and retrieve the results
           ReturnBookingDetailsDto bookingDetails=await con.QueryFirstAsync<ReturnBookingDetailsDto>(
             @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,
-                      bookingDate AS bookingDateTime,st.name AS trainName,sj.schedule_id AS scheduleId,
+                      bookingDate AS bookingDateTime,st.train_no AS trainNo,st.seq_no AS trainSeqNo,st.name AS trainName,sj.schedule_id AS scheduleId,
                       sj.station_no AS fromStationNo,sj.seq_no AS fromStationSeqNo,ej.station_no AS toStationNo,ej.seq_no AS toStationSeqNo
                 FROM booking b
                 INNER JOIN journey sj ON b.from_journey_id=sj.journey_id AND sj.is_active=true
                 INNER JOIN journey ej ON b.to_journey_id=ej.journey_id AND ej.is_active=true
                 INNER JOIN train st ON st.train_no = sj.train_no AND st.seq_no = sj.train_seq_no
                 INNER JOIN train et ON et.train_no = ej.train_no AND et.seq_no = ej.train_seq_no
-                WHERE booking_id=7"
+                WHERE booking_id=@booking_id"
             ,para, commandType: CommandType.Text);
 
           IEnumerable<SeatModel> seatsBooked=await con.QueryAsync<SeatModel>(
@@ -517,7 +517,8 @@ public class BookingDbRepo:IBookingDbRepo
 				        INNER JOIN booking b ON bj.booking_id=b.booking_id AND b.is_canceled=false
                 INNER JOIN seat s ON bj.seat_id=s.seat_id
                 INNER JOIN apartments a ON s.apartment_id=a.apartment_id
-                WHERE b.booking_id=@booking_id"
+                WHERE b.booking_id=@booking_id
+                ORDER BY a.apartment_id"
             ,para, commandType: CommandType.Text);
 
           bookingDetails.bookedSeats=seatsBooked.ToArray();
