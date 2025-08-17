@@ -1,5 +1,6 @@
 namespace Models.Dtos;
 public interface IResult { }
+public interface IResultArr { }
 
 public class ReturnTokenDto : IResult
 {
@@ -12,7 +13,7 @@ public class ReturnTokenDto : IResult
     public bool isAdmin { get; set; }
 }
 
-public class ReturnErrDto : IResult
+public class ReturnErrDto : IResult,IResultArr
 {
     public string messege { get; set; }
 

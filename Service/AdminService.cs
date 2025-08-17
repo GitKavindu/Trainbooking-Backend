@@ -210,11 +210,11 @@ public class AdminService:IAdminService
     
   }
 
-  public async Task<ResponseModel> GetUserStatus(string username)
+  public async Task<ResponseModel> GetUserStatus(GetUserStatusDto getUserStatusDto)
   {
-    ResponseModelTyped<bool> res=await _adminDbRepo.GetUserStatus(username);
+    ResponseModelTyped<IEnumerable<IResult>> res=await _adminDbRepo.GetUserStatus(getUserStatusDto);
 
-    return new ModdelMapper().ResponseToFormalResponse<bool>(res);
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<IResult>>(res);
   }
 }
 

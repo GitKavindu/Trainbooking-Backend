@@ -211,21 +211,73 @@ public class AdminDbRepo:IAdminDbRepo
     }
   } 
 
-  public async Task<ResponseModelTyped<bool>> GetUserStatus(string username)
+  public async Task<ResponseModelTyped<IEnumerable<IResult>>> GetUserStatus(GetUserStatusDto getUserStatusDto)
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
         con.Open();
         try
         {
+          string[] columns = { "username", "mobile_no","email","national_id","prefered_name", };
+          if (getUserStatusDto.columnId <= 0 || getUserStatusDto.columnId > columns.Length)
+          {
+              return new ResponseModelTyped<IEnumerable<IResult>>()
+              {
+                Success=false,
+                  ErrCode=400,
+                  Data=new List<IResult>{new ReturnErrDto("Invalid column Id")}
+              };
+          }
+          string columnName = columns[getUserStatusDto.columnId - 1];
+
           DynamicParameters para = new DynamicParameters();
-          para.Add("_username",username); 
+          para.Add("value",getUserStatusDto.value+"%"); 
           
+          string sqlQuery=
+              @$"SELECT username AS UserName,mobile_no AS MobileNo,email AS Email,national_id AS NationalId,
+                    is_admin AS IsAdmin,prefered_name AS PreferedName,is_active AS IsActive 
+                  FROM users
+                  WHERE {columnName} LIKE @value ";
+          
+         
+          if(getUserStatusDto.IsAdmin<0 || getUserStatusDto.IsAdmin>2)
+          {
+              return new ResponseModelTyped<IEnumerable<IResult>>()
+              {
+                Success=false,
+                  ErrCode=400,
+                  Data=new List<IResult>{new ReturnErrDto("Invalid user type")}
+              };
+          }
+          else if(getUserStatusDto.IsActive<0 || getUserStatusDto.IsActive>2)
+          {
+              return new ResponseModelTyped<IEnumerable<IResult>>()
+              {
+                Success=false,
+                  ErrCode=400,
+                  Data=new List<IResult>{new ReturnErrDto("Invalid user status")}
+              };
+          }
+          else
+          {
+              if(getUserStatusDto.IsAdmin!=0)
+              {
+                sqlQuery+="AND is_admin=";
+                sqlQuery+=getUserStatusDto.IsAdmin==1 ? "true ":"false ";
+              }
+
+              if(getUserStatusDto.IsActive!=0)
+              {
+                sqlQuery+="AND is_active=";
+                sqlQuery+=getUserStatusDto.IsActive==1 ? "true;":"false;";
+              }
+          }
+
           // Call the function with the parameters and retrieve the results
-          bool isAdmin=await con.QueryFirstAsync<bool>($"SELECT is_admin FROM users WHERE username=@_username;",para, commandType: CommandType.Text);
+          IEnumerable<ReturnUUserStatusDto> isAdmin=await con.QueryAsync<ReturnUUserStatusDto>(sqlQuery,para, commandType: CommandType.Text);
 
           // Return the result
-          return new ResponseModelTyped<bool>()
+          return new ResponseModelTyped<IEnumerable<IResult>>()
           {
               Success = true,
               ErrCode = 200,
@@ -236,7 +288,7 @@ public class AdminDbRepo:IAdminDbRepo
         catch (NpgsqlException ex)
         {
             Console.WriteLine(ex);
-            return new ResponseModelTyped<bool>()
+            return new ResponseModelTyped<IEnumerable<IResult>>()
             {
                 Success = false,
                 ErrCode = 500
@@ -245,7 +297,7 @@ public class AdminDbRepo:IAdminDbRepo
         catch (Exception ex)
         {
           Console.WriteLine(ex);  
-          return new ResponseModelTyped<bool>()
+          return new ResponseModelTyped<IEnumerable<IResult>>()
             {
                 Success = false,
                 ErrCode = 500
