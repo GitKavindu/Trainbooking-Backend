@@ -218,7 +218,8 @@ public class AdminDbRepo:IAdminDbRepo
         con.Open();
         try
         {
-          string[] columns = { "username", "mobile_no","email","national_id","prefered_name", };
+          //                    1             2           3         4             5              6
+          string[] columns = { "u.username", "mobile_no","email","national_id","prefered_name","FullName"};
           if (getUserStatusDto.columnId <= 0 || getUserStatusDto.columnId > columns.Length)
           {
               return new ResponseModelTyped<IEnumerable<IResult>>()
@@ -228,18 +229,7 @@ public class AdminDbRepo:IAdminDbRepo
                   Data=new List<IResult>{new ReturnErrDto("Invalid column Id")}
               };
           }
-          string columnName = columns[getUserStatusDto.columnId - 1];
 
-          DynamicParameters para = new DynamicParameters();
-          para.Add("value",getUserStatusDto.value+"%"); 
-          
-          string sqlQuery=
-              @$"SELECT username AS UserName,mobile_no AS MobileNo,email AS Email,national_id AS NationalId,
-                    is_admin AS IsAdmin,prefered_name AS PreferedName,is_active AS IsActive 
-                  FROM users
-                  WHERE {columnName} LIKE @value ";
-          
-         
           if(getUserStatusDto.IsAdmin<0 || getUserStatusDto.IsAdmin>2)
           {
               return new ResponseModelTyped<IEnumerable<IResult>>()
@@ -258,21 +248,41 @@ public class AdminDbRepo:IAdminDbRepo
                   Data=new List<IResult>{new ReturnErrDto("Invalid user status")}
               };
           }
+
+          string columnName = columns[getUserStatusDto.columnId - 1];
+         
+          string sqlQuery=
+              @$"SELECT u.username AS UserName,mobile_no AS MobileNo,email AS Email,national_id AS NationalId,
+                    is_admin AS IsAdmin,prefered_name AS PreferedName,is_active AS IsActive,string_agg(n.name, ' ') AS FullName 
+                  FROM users u
+				          INNER JOIN name n ON u.username=n.username
+                  GROUP BY u.username";
+          
+          DynamicParameters para = new DynamicParameters();
+          
+          if(getUserStatusDto.columnId==columns.Length)
+          {
+            para.Add("value","%"+getUserStatusDto.value+"%");
+            sqlQuery+="\n"+$"HAVING string_agg(n.name, ' ') ILIKE @value "; 
+          }
           else
           {
-              if(getUserStatusDto.IsAdmin!=0)
-              {
-                sqlQuery+="AND is_admin=";
-                sqlQuery+=getUserStatusDto.IsAdmin==1 ? "true ":"false ";
-              }
-
-              if(getUserStatusDto.IsActive!=0)
-              {
-                sqlQuery+="AND is_active=";
-                sqlQuery+=getUserStatusDto.IsActive==1 ? "true;":"false;";
-              }
+            para.Add("value",getUserStatusDto.value+"%");
+            sqlQuery+="\n"+$"HAVING {columnName} LIKE @value ";
+          }       
+          
+          if(getUserStatusDto.IsAdmin!=0)
+          {
+            sqlQuery+="AND is_admin=";
+            sqlQuery+=getUserStatusDto.IsAdmin==1 ? "true ":"false ";
           }
 
+          if(getUserStatusDto.IsActive!=0)
+          {
+            sqlQuery+="AND is_active=";
+            sqlQuery+=getUserStatusDto.IsActive==1 ? "true;":"false;";
+          }
+          
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnUUserStatusDto> isAdmin=await con.QueryAsync<ReturnUUserStatusDto>(sqlQuery,para, commandType: CommandType.Text);
 
