@@ -19,14 +19,75 @@ public class BookingService:IBookingService
     _apartmentDbRepo=apartmentDbRepo;
   }
 
-  public async Task<ResponseModel> SelectAllSeatsForJourney(int journeyId)
+  public async Task<ResponseModel> SelectAllSeatsForJourney(string scheduleId,int apartmentId)
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectAllSeatsForJourney(journeyId));
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectAllSeatsForJourney(scheduleId,apartmentId));
   }
 
-  public async Task<ResponseModel> SelectBookedSeatsForJourney(int fromjourneyId,int tojourneyId,int apartmentId)
+  public async Task<ResponseModel> SelectSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto)
   {
-    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectBookedSeatsForApartment(fromjourneyId,tojourneyId,apartmentId));
+    if(getSortedSchedulesDto.scheduledStartTime==DateTime.MinValue)
+    {
+      return new ResponseModel
+      {
+          Success=false,
+          ErrCode=400,
+          Data="Start date or time not in valid format"
+      };
+    }
+
+    if(getSortedSchedulesDto.scheduledEndTime==DateTime.MinValue)
+    {
+      ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>> returnSortedSchedulesDto=await _BookingDbRepo.getSortedSchedules(getSortedSchedulesDto,true);
+      return await getStartDestDetails(returnSortedSchedulesDto);      
+    }      
+    else
+    {
+      ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>> returnSortedSchedulesDto=await _BookingDbRepo.getSortedSchedules(getSortedSchedulesDto,false);
+      return await getStartDestDetails(returnSortedSchedulesDto);  
+    }
+  }
+
+  private async Task<ResponseModel> getStartDestDetails(ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>> returnSortedSchedulesDto)
+  {
+    ReturnSortedSchedulesDto[] returnSortedSchedulesDtoArr;
+      if(returnSortedSchedulesDto.Success==true && returnSortedSchedulesDto.Data.Count() != 0)
+      {
+        returnSortedSchedulesDtoArr=returnSortedSchedulesDto.Data.ToArray();
+        foreach(var i in returnSortedSchedulesDtoArr)
+        {
+          ResponseModelTyped<ReturnJourneyStationDto> returnJourneyDto=await _journeyDbRepo.selectAJourney(i.scheduleId);
+          if(returnJourneyDto.Success==true)
+          {
+            i.startDestDetails=returnJourneyDto.Data;
+          }
+          else
+          {
+            i.startDestDetails=null;
+          }
+        }
+      }
+      else
+      {
+        return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnSortedSchedulesDto>>(returnSortedSchedulesDto);
+      }
+      
+      return new ResponseModel()
+      {
+        Success=true,
+        ErrCode=200,
+        Data=returnSortedSchedulesDtoArr
+      };
+  }
+  
+  public async Task<ResponseModel> SelectBookedSeatsForApartment(int fromJourneyId,int ToJourneyId,int apartmentId)
+  {
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<SeatModel>>(await _BookingDbRepo.SelectBookedSeatsForApartment(fromJourneyId,ToJourneyId,apartmentId));
+  }
+
+  public async Task<ResponseModel> SelectBookingsForUser(string tokenId)
+  {
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<ReturnBookingDetailsDto>>(await _BookingDbRepo.SelectBookingsForUser(tokenId));
   }
 
   public async Task<ResponseModel> SelectAllJourneysForSchedule(string scheduleId)
@@ -354,9 +415,9 @@ public class BookingService:IBookingService
   }
   
   //calculate Refund Price for canceled bookings
-  private static async Task<float> refundPrice(float price)
+  private static async Task<decimal> refundPrice(decimal price)
   {
     //dummy code
-    return price*0.80f;
+    return price*0.80m;
   }
 }

@@ -4,7 +4,11 @@ namespace Models.Dtos
     {
         public string? scheduleId{get;set;}
         public string? startstation{get;set;}
+        public int startStationId{get;set;}
+        public int startSeqNo{get;set;}
         public string? endstation{get;set;}
+        public int endStationId{get;set;}
+        public int endSeqNo{get;set;}
         public DateTime startTime
         {   
             set
@@ -30,5 +34,10 @@ namespace Models.Dtos
 
         public string endingDate{get;set;}
         public string endingTime{get;set;}
+
+        public string train{get;set;}
+
+        public int trainId{get;set;}
+        public int trainSeqNo{get;set;}
     }
 }

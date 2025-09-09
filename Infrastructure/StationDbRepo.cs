@@ -83,7 +83,7 @@ public class StationDbRepo:IStationDbRepo
         {
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnStationDto> results=await con.QueryAsync<ReturnStationDto>(
-            $"SELECT station_id,station_name,added_by,TO_CHAR(added_date, 'YYYY-MM-DD') AS created_date,TO_CHAR(modified_date, 'YYYY-MM-DD') AS lastUpdated_date FROM station WHERE is_active=true"
+            $"SELECT station_id,seq_no AS stationSeqNo,station_name,added_by,TO_CHAR(added_date, 'YYYY-MM-DD') AS created_date,TO_CHAR(modified_date, 'YYYY-MM-DD') AS lastUpdated_date FROM station WHERE is_active=true"
             , commandType: CommandType.Text);
 
           // Return the result

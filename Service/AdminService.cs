@@ -210,11 +210,27 @@ public class AdminService:IAdminService
     
   }
 
-  public async Task<ResponseModel> GetUserStatus(string username)
+  public async Task<ResponseModel> GetUserStatus(GetUserStatusDto getUserStatusDto)
   {
-    ResponseModelTyped<bool> res=await _adminDbRepo.GetUserStatus(username);
+    //First check the authentication 
+    ResponseModelTyped<AuthenticateTokenModel> user=await _adminDbRepo.AuthenticateUser(getUserStatusDto.tokenId);
 
-    return new ModdelMapper().ResponseToFormalResponse<bool>(res);
+    if(user.Success==false)
+      return new ModdelMapper().ResponseToFormalResponse<AuthenticateTokenModel>(user);
+    else if(user.Data.is_user_active==false || user.Data.is_token_valid==false)// || user.Data.is_user_admin==false)
+    {
+       return new ResponseModel
+        {
+          Success=false,
+            ErrCode=403,
+            Data=user.Data
+        };
+    }
+
+
+    ResponseModelTyped<IEnumerable<IResult>> res=await _adminDbRepo.GetUserStatus(getUserStatusDto);
+
+    return new ModdelMapper().ResponseToFormalResponse<IEnumerable<IResult>>(res);
   }
 }
 

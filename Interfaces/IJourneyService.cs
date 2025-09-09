@@ -5,6 +5,7 @@ namespace Interfaces;
 
 public interface IJourneyService
 {
+    Task<ResponseModel> selectStartOrEndStations(bool isStart,string scheduleId);
     Task<ResponseModel> AddJourney(AddJourneyDto JourneyDto);
     Task<ResponseModel> selectAJourney(string schedule_id);
     Task<ResponseModel> UpdateJourney(AddJourneyDto JourneyDto);

@@ -21,19 +21,19 @@ public class BookingController: ControllerBase
     }
 
     [HttpGet("selectAllSeatsForJourney")] 
-    public async Task<ResponseModel> SelectAllSeatsForJourney(int journeyId)
+    public async Task<ResponseModel> SelectAllSeatsForJourney(string scheduleId,int apartmentId)
     {
-      ResponseModel responseModel=await _BookingService.SelectAllSeatsForJourney(journeyId); 
+      ResponseModel responseModel=await _BookingService.SelectAllSeatsForJourney(scheduleId,apartmentId); 
 
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 
       return responseModel;
     } 
 
-    [HttpGet("selectBookedSeatsForJourney")] 
-    public async Task<ResponseModel> SelectBookedSeatsForJourney(int fromJourneyId,int toJourneyId,int apartmentId)
+    [HttpGet("selectBookedSeatsForJourney")]
+    public async Task<ResponseModel> SelectBookedSeatsForApartment(int fromJourneyId,int ToJourneyId,int apartmentId)
     {
-      ResponseModel responseModel=await _BookingService.SelectBookedSeatsForJourney(fromJourneyId,toJourneyId,apartmentId); 
+      ResponseModel responseModel=await _BookingService.SelectBookedSeatsForApartment(fromJourneyId,ToJourneyId,apartmentId); 
 
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 
@@ -80,4 +80,23 @@ public class BookingController: ControllerBase
       return responseModel;
     }
 
+    [HttpPost("selectSortedSchedules")] 
+    public async Task<ResponseModel> SelectSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto)
+    {
+      ResponseModel responseModel=await _BookingService.SelectSortedSchedules(getSortedSchedulesDto);
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    }
+
+    [HttpPost("selectMyBookings")] 
+    public async Task<ResponseModel> SelectBookingsForUser(disableTokenModel disableTokenModel)
+    {
+      ResponseModel responseModel=await _BookingService.SelectBookingsForUser(disableTokenModel.tokenId); 
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
+    }
 }

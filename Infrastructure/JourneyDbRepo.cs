@@ -4,6 +4,7 @@ using Npgsql;
 using System.Data;
 using Dapper;
 using Models.Dtos;
+using Newtonsoft.Json;
 namespace Infrastructure;
 
 
@@ -15,6 +16,57 @@ public class JourneyDbRepo:IJourneyDbRepo
   {
     _dbConnectRepo=dbConnectRepo;
     
+  }
+
+  public async Task<ResponseModelTyped<IEnumerable<ReturnStationDto>>> selectStartOrEndStations(bool isStart,string scheduleId)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+
+          para.Add("_is_startlist",isStart);
+          para.Add("_scheduleid",scheduleId);
+          // OUT parameter
+          para.Add("_result", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+          var results=await con.ExecuteAsync
+          (   "CALL public.getStartStationsOrEndStations(@_is_startlist,@_scheduleid,NULL)",
+              para, commandType: CommandType.Text
+          );
+
+          string json = para.Get<string>("_result");
+
+          List<ReturnStationDto> stationList= JsonConvert.DeserializeObject<List<ReturnStationDto>>(json);
+
+          return new ResponseModelTyped<IEnumerable<ReturnStationDto>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = stationList
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            return new ResponseModelTyped<IEnumerable<ReturnStationDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<ReturnStationDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
   }
 
   public async Task<ResponseModelTyped<IEnumerable<ReturnJourneyStationDto>>> selectAllJourneys()
@@ -29,7 +81,9 @@ public class JourneyDbRepo:IJourneyDbRepo
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnJourneyStationDto> results=await con.QueryAsync<ReturnJourneyStationDto>(
             @$"SELECT j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
-                        s.station_name AS StartStation,n.station_name AS EndStation,P.schedule_id AS scheduleId
+                      s.station_name AS StartStation,s.station_id AS StartStationId,s.seq_no AS StartSeqNo,
+                      n.station_name AS EndStation,n.station_id AS EndStationId,n.seq_no AS EndSeqNo,
+                      P.schedule_id AS scheduleId,st.name AS train,st.train_no AS trainId,st.seq_no AS trainSeqNo
                 FROM (	
                   SELECT schedule_id,MAX(journey_id) AS maxId,MIN(journey_id) AS minId
                   FROM journey
@@ -39,7 +93,8 @@ public class JourneyDbRepo:IJourneyDbRepo
                 INNER join journey j on P.minId= j.journey_id
                 INNER join journey t on P.maxId= t.journey_id 
                 INNER join station s on j.seq_no=s.seq_no AND j.station_no=s.station_id
-                INNER join station n on t.seq_no=n.seq_no AND t.station_no=n.station_id"
+                INNER join station n on t.seq_no=n.seq_no AND t.station_no=n.station_id
+                INNER join train st on j.train_no = st.train_no AND j.train_seq_no = st.seq_no"
             ,para, commandType: CommandType.Text);
 
           // Return the result
@@ -72,7 +127,7 @@ public class JourneyDbRepo:IJourneyDbRepo
     }
   }
 
-  public async Task<ResponseModelTyped<IEnumerable<ReturnJourneyDto>>> selectAJourney(string schedule_id)
+  public async Task<ResponseModelTyped<ReturnJourneyStationDto>> selectAJourney(string schedule_id)
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
@@ -83,17 +138,27 @@ public class JourneyDbRepo:IJourneyDbRepo
           para.Add("schedule_id",schedule_id);
 
           // Call the function with the parameters and retrieve the results
-          IEnumerable<ReturnJourneyDto> results=await con.QueryAsync<ReturnJourneyDto>(
-            @$"SELECT t.name AS train,s.station_name AS station,j.scheduled_start_time as scheduledTime 
-            FROM journey j 
-            INNER JOIN station s ON s.station_id=j.station_no AND s.seq_no = j.seq_no 
-            INNER JOIN train t ON t.train_no = j.train_no AND t.seq_no = j.train_seq_no 
-            WHERE j.schedule_id=@schedule_id AND j.is_active=true 
-            ORDER BY j.journey_id"
+          ReturnJourneyStationDto results=await con.QueryFirstAsync<ReturnJourneyStationDto>(
+            @$"SELECT j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
+                      s.station_name AS StartStation,s.station_id AS StartStationId,s.seq_no AS StartSeqNo,
+                      n.station_name AS EndStation,n.station_id AS EndStationId,n.seq_no AS EndSeqNo,
+                      P.schedule_id AS scheduleId,st.name AS train,st.train_no AS trainId,st.seq_no AS trainSeqNo
+                FROM (	
+                  SELECT schedule_id,MAX(journey_id) AS maxId,MIN(journey_id) AS minId
+                  FROM journey
+                  WHERE is_active=true
+                  GROUP BY schedule_id
+                ) 	P
+                INNER join journey j on P.minId= j.journey_id
+                INNER join journey t on P.maxId= t.journey_id 
+                INNER join station s on j.seq_no=s.seq_no AND j.station_no=s.station_id
+                INNER join station n on t.seq_no=n.seq_no AND t.station_no=n.station_id
+                INNER join train st on j.train_no = st.train_no AND j.train_seq_no = st.seq_no
+				        WHERE P.schedule_id=@schedule_id"
             ,para, commandType: CommandType.Text);
 
           // Return the result
-          return new ResponseModelTyped<IEnumerable<ReturnJourneyDto>>()
+          return new ResponseModelTyped<ReturnJourneyStationDto>()
           {
               Success = true,
               ErrCode = 200,
@@ -104,7 +169,7 @@ public class JourneyDbRepo:IJourneyDbRepo
         catch (NpgsqlException ex)
         {
             Console.WriteLine(ex); 
-            return new ResponseModelTyped<IEnumerable<ReturnJourneyDto>>()
+            return new ResponseModelTyped<ReturnJourneyStationDto>()
             {
                 Success = false,
                 ErrCode = 500
@@ -113,7 +178,7 @@ public class JourneyDbRepo:IJourneyDbRepo
         catch (Exception ex)
         {
           Console.WriteLine(ex);  
-          return new ResponseModelTyped<IEnumerable<ReturnJourneyDto>>()
+          return new ResponseModelTyped<ReturnJourneyStationDto>()
             {
                 Success = false,
                 ErrCode = 500

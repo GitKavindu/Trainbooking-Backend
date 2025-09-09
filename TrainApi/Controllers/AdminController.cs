@@ -20,12 +20,6 @@ public class AdminController: ControllerBase
       _adminService=adminService;
     }
 
-    [HttpGet("testing")] 
-    public string Testing()
-    {
-      return "Testing 1";
-    }
-
     [HttpPost("appointAdmin")] 
     public async Task<ResponseModel> AppointAdmin([FromBody] AppointAdmin appointAdmin)
     {
@@ -66,13 +60,13 @@ public class AdminController: ControllerBase
       return responseModel;
     }
 
-    [HttpGet("GetUserStatus/{username}")] 
-    public async Task<ResponseModel> getUserStatus(string username)
+    [HttpPost("GetUserStatus")] 
+    public async Task<ResponseModel> GetUserStatus(GetUserStatusDto getUserStatusDto)
     {
-      ResponseModel responseModel=await _adminService.GetUserStatus(username);  
+      ResponseModel responseModel=await _adminService.GetUserStatus(getUserStatusDto);  
 
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 
       return responseModel;
-    } 
+    }
 }

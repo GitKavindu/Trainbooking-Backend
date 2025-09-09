@@ -5,6 +5,7 @@ using Dapper;
 using Npgsql;
 using System.Data;
 using NpgsqlTypes;
+using System.Text.Json;
 
 namespace Infrastructure;
 
@@ -15,10 +16,9 @@ public class BookingDbRepo:IBookingDbRepo
   public BookingDbRepo(IDbConnectRepo dbConnectRepo)
   {
     _dbConnectRepo=dbConnectRepo;
-    
   }
 
-  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectAllSeatsForJourney(int journeyId) 
+  public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectAllSeatsForJourney(string scheduleId,int apartmentId) 
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
@@ -26,15 +26,22 @@ public class BookingDbRepo:IBookingDbRepo
         try
         {
           DynamicParameters para=new DynamicParameters();
-           para.Add("journey_id",journeyId);
+          para.Add("schedule_id",scheduleId);
+          para.Add("apartment_id",apartmentId);
           
+          int startJourneyId=await con.QueryFirstAsync<int>(
+            @$"SELECT MIN(journey_id) FROM journey WHERE schedule_id=@schedule_id"
+            ,para, commandType: CommandType.Text);
+
+          para.Add("journey_id",startJourneyId);
+
           // Call the function with the parameters and retrieve the results
           IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(
-            @$"SELECT j.journey_id,j.train_no,j.train_seq_no,j.schedule_id,s.seat_id,s.is_left AS isLeft,s.row_no AS rowNo,s.seq_no AS seqNo,s.apartment_id AS apartmentId
-                FROM journey j 
-                INNER JOIN apartments a ON j.train_no=a.train_id AND j.train_seq_no=a.train_seq_no
+            @$"SELECT s.is_left AS isLeft,s.row_no AS rowNo,s.seq_no AS seqNo,s.apartment_id AS apartmentId
+                FROM journey js
+                INNER JOIN apartments a ON js.train_no=a.train_id AND js.train_seq_no=a.train_seq_no
                 INNER JOIN seat s ON s.apartment_id = a.apartment_id
-                WHERE j.journey_id=@journey_id
+                WHERE js.journey_id=@journey_id AND a.is_active=true AND a.apartment_id=@apartment_id
                 ORDER BY s.row_no,s.is_left,s.seq_no"
             ,para, commandType: CommandType.Text);
 
@@ -66,7 +73,95 @@ public class BookingDbRepo:IBookingDbRepo
             };
         }
     }
-  } 
+  }
+
+  public async Task<ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>> getSortedSchedules(GetSortedSchedulesDto getSortedSchedulesDto,bool onlyStart) 
+  {
+    //Console.WriteLine(JsonSerializer.Serialize(getSortedSchedulesDto));
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+           para.Add("startStationId",getSortedSchedulesDto.startStationId);
+           para.Add("startStationSeqNo",getSortedSchedulesDto.startStationSeqNo);
+           para.Add("scheduledStartTime",getSortedSchedulesDto.scheduledStartTime);
+
+           para.Add("endStationId",getSortedSchedulesDto.endStationId);
+           para.Add("endStationSeqNo",getSortedSchedulesDto.endStationSeqNo);
+           para.Add("scheduledEndTime",getSortedSchedulesDto.scheduledEndTime);           
+                     
+          // Call the function with the parameters and retrieve the results
+
+          IEnumerable<ReturnSortedSchedulesDto> allSeats;
+
+          if(onlyStart==false)
+          {
+            allSeats=await con.QueryAsync<ReturnSortedSchedulesDto>(
+            @$"select ja.schedule_id AS scheduleId,ja.journey_id AS startJourneyId,je.journey_id AS endJourneyId,
+                    ja.scheduled_start_time AS scheduledStartTime,sa.station_id AS startStationId,sa.seq_no AS startSeqNo,sa.station_name AS startStationName,
+                    je.scheduled_start_time AS scheduledEndTime,se.station_id AS endStationId,se.seq_no AS endSeqNo,se.station_name AS endStationName,
+                    t.train_no AS trainId,t.seq_no AS trainSeqNo,t.name AS trainName
+                from journey ja
+                inner join journey je on ja.schedule_id=je.schedule_id and ja.scheduled_start_time < je.scheduled_start_time
+                inner join station sa on ja.station_no=sa.station_id and ja.seq_no=sa.seq_no
+                inner join station se on je.station_no=se.station_id and je.seq_no=se.seq_no
+                inner join train t on ja.train_no = t.train_no and ja.train_seq_no=t.seq_no
+                where ja.station_no=@startStationId and ja.seq_no=@startStationSeqNo and ja.is_active=true and ja.scheduled_start_time >=@scheduledStartTime and
+                    je.station_no=@endStationId and je.seq_no=@endStationSeqNo and je.is_active=true and je.scheduled_start_time <= @scheduledEndTime
+                ORDER BY ja.scheduled_start_time"
+            ,para, commandType: CommandType.Text);
+
+
+          }
+          else
+          {
+              allSeats=await con.QueryAsync<ReturnSortedSchedulesDto>(
+              @$"select ja.schedule_id AS scheduleId,ja.journey_id AS startJourneyId,je.journey_id AS endJourneyId,
+                      ja.scheduled_start_time AS scheduledStartTime,sa.station_id AS startStationId,sa.seq_no AS startSeqNo,sa.station_name AS startStationName,
+                      je.scheduled_start_time AS scheduledEndTime,se.station_id AS endStationId,se.seq_no AS endSeqNo,se.station_name AS endStationName,
+                      t.train_no AS trainId,t.seq_no AS trainSeqNo,t.name AS trainName
+                  from journey ja
+                  inner join journey je on ja.schedule_id=je.schedule_id and ja.scheduled_start_time < je.scheduled_start_time
+                  inner join station sa on ja.station_no=sa.station_id and ja.seq_no=sa.seq_no
+                  inner join station se on je.station_no=se.station_id and je.seq_no=se.seq_no
+                  inner join train t on ja.train_no = t.train_no and ja.train_seq_no=t.seq_no
+                  where ja.station_no=@startStationId and ja.seq_no=@startStationSeqNo and ja.is_active=true and ja.scheduled_start_time >=@scheduledStartTime and
+                      je.station_no=@endStationId and je.seq_no=@endStationSeqNo and je.is_active=true
+                  ORDER BY ja.scheduled_start_time"
+              ,para, commandType: CommandType.Text);
+          }
+
+          
+          return new ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = allSeats
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<ReturnSortedSchedulesDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }  
 
   public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForApartment(int fromJourneyId,int ToJourneyId,int apartmentId) 
   {
@@ -83,9 +178,12 @@ public class BookingDbRepo:IBookingDbRepo
           // Call the function with the parameters and retrieve the results
           IEnumerable<SeatModel> allSeats=await con.QueryAsync<SeatModel>(
             @$"SELECT is_left AS isLeft,row_no AS rowNo,seq_no AS seqNo,s.apartment_id AS apartmentId 
-                FROM booking_journey b
-                INNER JOIN seat s ON b.seat_id=s.seat_id
-                WHERE b.journey_id>=@from_journey_id AND b.journey_id<=@to_journey_id AND s.apartment_id=@apartment_id"
+                FROM booking_journey bj
+                INNER JOIN booking b ON bj.booking_id=b.booking_id
+                INNER JOIN seat s ON bj.seat_id=s.seat_id
+                WHERE ( (b.from_journey_id<=@from_journey_id AND b.to_journey_id>@from_journey_id) OR
+						            (b.from_journey_id<@to_journey_id AND b.to_journey_id>=@to_journey_id) ) AND 
+                      s.apartment_id=@apartment_id AND b.is_canceled=false"
             ,para, commandType: CommandType.Text);
 
           
@@ -116,7 +214,8 @@ public class BookingDbRepo:IBookingDbRepo
             };
         }
     }
-  } 
+  }
+   
    public async Task<ResponseModelTyped<IEnumerable<SeatModel>>> SelectBookedSeatsForTrain(int fromJourneyId,int ToJourneyId,int trainId,int trainSeqNo)
    {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
@@ -137,7 +236,9 @@ public class BookingDbRepo:IBookingDbRepo
 				        INNER JOIN booking b ON bj.booking_id=b.booking_id AND b.is_canceled=false
                 INNER JOIN seat s ON bj.seat_id=s.seat_id
                 INNER JOIN apartments a ON s.apartment_id=a.apartment_id
-                WHERE bj.journey_id>=@from_journey_id AND bj.journey_id<=@to_journey_id AND a.train_id=@train_id AND a.train_seq_no=@train_seq_no"
+                WHERE ( (b.from_journey_id<=@from_journey_id AND b.to_journey_id>@from_journey_id) OR
+						            (b.from_journey_id<@to_journey_id AND b.to_journey_id>=@to_journey_id) ) AND 
+                      b.is_canceled=false AND a.train_id=@train_id AND a.train_seq_no=@train_seq_no"
             ,para, commandType: CommandType.Text);
 
           
@@ -182,7 +283,8 @@ public class BookingDbRepo:IBookingDbRepo
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnJourneyStationDto> allSeats=await con.QueryAsync<ReturnJourneyStationDto>(
             @$"SELECT j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
-                        s.station_name AS StartStation,n.station_name AS EndStation
+                        s.station_name AS StartStation,s.station_id AS startStationId,s.seq_no AS startSeqNo,
+						            n.station_name AS EndStation,n.station_id AS endStationId,n.seq_no AS endSeqNo
                 FROM journey j
                 INNER join journey t on j.journey_id + 1 = t.journey_id AND j.schedule_id=t.schedule_id
                 inner join station s on j.seq_no=s.seq_no AND j.station_no=s.station_id
@@ -221,6 +323,58 @@ public class BookingDbRepo:IBookingDbRepo
     }
   }
 
+  public async Task<ResponseModelTyped<IEnumerable<ReturnBookingDetailsDto>>> SelectBookingsForUser(string tokenId) 
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para=new DynamicParameters();
+          para.Add("token_id",tokenId);
+          
+          // Call the function with the parameters and retrieve the results
+          IEnumerable<ReturnBookingDetailsDto> allSeats=await con.QueryAsync<ReturnBookingDetailsDto>(
+          @$"SELECT booking_id AS bookingId,netPrice AS price,is_canceled AS isCanceled,bookingDate AS bookingDateTime,jt.name AS trainName
+              FROM booking b
+              INNER JOIN (
+                SELECT username FROM token WHERE token_id=@token_id) t ON t.username=b.booked_by
+              INNER JOIN journey j ON b.schedule_id=j.schedule_id AND j.is_active=true
+              INNER JOIN train jt ON jt.train_no = j.train_no AND jt.seq_no = j.train_seq_no
+              GROUP BY booking_id,booked_by,netPrice,is_canceled,j.schedule_id,jt.name"
+            ,para, commandType: CommandType.Text);
+
+          
+          return new ResponseModelTyped<IEnumerable<ReturnBookingDetailsDto>>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = allSeats
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<IEnumerable<ReturnBookingDetailsDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IEnumerable<ReturnBookingDetailsDto>>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    }
+  }
+
+
   public async Task<ResponseModelTyped<string>> BookForSchedule
   (
     AddBookingDto addBookingDto,string bookedUser,float netPrice,float[] prices
@@ -240,10 +394,13 @@ public class BookingDbRepo:IBookingDbRepo
                 para.Add("booked_by",bookedUser);
                 para.Add("is_canceled",false);
                 para.Add("netprice",netPrice);
+                para.Add("bookingDate",DateTime.Now);
+                para.Add("from_journey_id",addBookingDto.fromJourneyId);
+                para.Add("to_journey_id",addBookingDto.ToJourneyId);
   
                 int booking_id=await con.ExecuteScalarAsync<int>
-                (   @"INSERT INTO booking(schedule_id,booked_by,is_canceled,netprice) 
-                      VALUES (@schedule_id,@booked_by,@is_canceled,@netprice)
+                (   @"INSERT INTO booking(schedule_id,booked_by,is_canceled,netprice,bookingDate,from_journey_id,to_journey_id) 
+                      VALUES (@schedule_id,@booked_by,@is_canceled,@netprice,@bookingDate,@from_journey_id,@to_journey_id)
                       RETURNING booking_id",
                     para, commandType: CommandType.Text
                 );             
@@ -291,11 +448,11 @@ public class BookingDbRepo:IBookingDbRepo
   {
      
     DynamicParameters para=new DynamicParameters();
-    string sql=$"INSERT INTO booking_journey(booking_id,journey_id,price,seat_id,schedule_id) VALUES ";
+    string sql=$"INSERT INTO booking_journey(booking_id,price,seat_id,schedule_id) VALUES ";
 
     for(int i=0;i<seatModel.Length;i++)
     {
-        sql=sql+@$"(@booking_id{i},@journey_id{i},@price{i},
+        sql=sql+@$"(@booking_id{i},@price{i},
                     (select seat_id from seat where is_left=@is_left{i} AND row_no=@row_no{i} AND seq_no=@seq_no{i} AND apartment_id=@apartment_id{i}),
                     @schedule_id{i})";
 
@@ -309,7 +466,6 @@ public class BookingDbRepo:IBookingDbRepo
         }
 
         para.Add($"booking_id{i}",bookingId); 
-        para.Add($"journey_id{i}",fromJourneyId);
         para.Add($"price{i}",prices[i]);
         para.Add($"is_left{i}",seatModel[i].isLeft);
         para.Add($"row_no{i}",seatModel[i].rowNo);
@@ -344,11 +500,15 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           ReturnBookingDetailsDto bookingDetails=await con.QueryFirstAsync<ReturnBookingDetailsDto>(
-            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled 
+            @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,
+                      bookingDate AS bookingDateTime,st.train_no AS trainNo,st.seq_no AS trainSeqNo,st.name AS trainName,sj.schedule_id AS scheduleId,
+                      sj.station_no AS fromStationNo,sj.seq_no AS fromStationSeqNo,ej.station_no AS toStationNo,ej.seq_no AS toStationSeqNo
                 FROM booking b
-                INNER JOIN journey j ON b.schedule_id=j.schedule_id AND j.is_active=true
-                WHERE booking_id=@booking_id
-                GROUP BY booking_id,booked_by,netPrice,is_canceled,j.schedule_id"
+                INNER JOIN journey sj ON b.from_journey_id=sj.journey_id AND sj.is_active=true
+                INNER JOIN journey ej ON b.to_journey_id=ej.journey_id AND ej.is_active=true
+                INNER JOIN train st ON st.train_no = sj.train_no AND st.seq_no = sj.train_seq_no
+                INNER JOIN train et ON et.train_no = ej.train_no AND et.seq_no = ej.train_seq_no
+                WHERE booking_id=@booking_id"
             ,para, commandType: CommandType.Text);
 
           IEnumerable<SeatModel> seatsBooked=await con.QueryAsync<SeatModel>(
@@ -357,7 +517,8 @@ public class BookingDbRepo:IBookingDbRepo
 				        INNER JOIN booking b ON bj.booking_id=b.booking_id AND b.is_canceled=false
                 INNER JOIN seat s ON bj.seat_id=s.seat_id
                 INNER JOIN apartments a ON s.apartment_id=a.apartment_id
-                WHERE b.booking_id=@booking_id"
+                WHERE b.booking_id=@booking_id
+                ORDER BY a.apartment_id"
             ,para, commandType: CommandType.Text);
 
           bookingDetails.bookedSeats=seatsBooked.ToArray();
@@ -391,7 +552,7 @@ public class BookingDbRepo:IBookingDbRepo
     }
   }
 
-  public async Task<ResponseModelTyped<string>> CancelBooking(int bookingId,float refundPrice) 
+  public async Task<ResponseModelTyped<string>> CancelBooking(int bookingId,decimal refundPrice) 
   {
     using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
     {
