@@ -25,4 +25,6 @@ public class ReturnTrainnDto
           : DateTime.Parse(value);
   }
 
+  public bool isActive{get;set;}
+
 }

@@ -282,7 +282,7 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnJourneyStationDto> allSeats=await con.QueryAsync<ReturnJourneyStationDto>(
-            @$"SELECT j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
+            @$"SELECT j.schedule_id AS scheduleId,j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
                         s.station_name AS StartStation,s.station_id AS startStationId,s.seq_no AS startSeqNo,
 						            n.station_name AS EndStation,n.station_id AS endStationId,n.seq_no AS endSeqNo
                 FROM journey j
@@ -338,7 +338,8 @@ public class BookingDbRepo:IBookingDbRepo
           @$"SELECT booking_id AS bookingId
               FROM booking b
               INNER JOIN (
-                SELECT username FROM token WHERE token_id=@token_id) t ON t.username=b.booked_by"
+                SELECT username FROM token WHERE token_id=@token_id) t ON t.username=b.booked_by
+              ORDER BY booking_id DESC"
             ,para, commandType: CommandType.Text);
 
           ReturnBookingDetailsDto[] allseatsArr=allSeats.ToArray();
