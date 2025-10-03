@@ -72,4 +72,23 @@ public class UserService:IUserService
     return new ModdelMapper().ResponseToFormalResponse<ReturnUserDto>(await _userDbRepo.GetTokenDetails(tokenId));
   }
   
+  public async Task<ResponseModel> GetUserDetails(disableTokenModel disableTokenModel)
+  {
+    ResponseModelTyped<ReturnUserDto> responseModel=await _userDbRepo.GetTokenDetails(disableTokenModel.tokenId);
+
+    if(responseModel.Success==false)
+      return new ModdelMapper().ResponseToFormalResponse<ReturnUserDto>(responseModel);
+    
+    if(responseModel.Data.IsActive==false)
+    {
+      return new ResponseModel()
+        {
+          Success=false,
+          ErrCode=403,
+          Data=new ReturnErrDto("Token is not active")
+        };
+    }
+    
+    return new ModdelMapper().ResponseToFormalResponse<IResult>(await _userDbRepo.GetUserDetails(disableTokenModel));
+  }
 }

@@ -359,4 +359,65 @@ public class UserDbRepo:IUserDbRepo
         }
     } 
   }
+
+  public async Task<ResponseModelTyped<IResult>> GetUserDetails(disableTokenModel disableTokenModel)
+  {
+    using (var con = new NpgsqlConnection(_dbConnectRepo.GetDatabaseConnection()))
+    {
+        con.Open();
+        try
+        {
+          DynamicParameters para = new DynamicParameters();
+          para.Add("@token_id",disableTokenModel.tokenId); 
+
+          // Call the function with the parameters and retrieve the results
+          ReturnUUserStatusDto res=
+            await con.QueryFirstAsync<ReturnUUserStatusDto>(
+              @$"SELECT * FROM 
+                    (SELECT u.username AS UserName,mobile_no AS MobileNo,email AS Email,national_id AS NationalId,
+                      is_admin AS IsAdmin,prefered_name AS PreferedName,u.is_active AS IsActive,string_agg(n.name, ' ') AS FullName 
+                      FROM users u
+                      INNER JOIN name n ON u.username=n.username
+                      GROUP BY u.username) g
+                  INNER JOIN token t ON t.username=g.username
+                  WHERE t.token_id=@token_id;",
+            para, commandType: CommandType.Text);
+
+          // Return the result
+          if(res is null)
+          {
+              return new ResponseModelTyped<IResult>()
+              {
+                Success = false,
+                ErrCode = 404
+              }; 
+          }
+          return new ResponseModelTyped<IResult>()
+          {
+              Success = true,
+              ErrCode = 200,
+              Data = res
+          };
+
+        }
+        catch (NpgsqlException ex)
+        {
+            Console.WriteLine(ex);
+            return new ResponseModelTyped<IResult>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex);  
+          return new ResponseModelTyped<IResult>()
+            {
+                Success = false,
+                ErrCode = 500
+            };
+        }
+    } 
+  }
 }

@@ -7,5 +7,6 @@ public interface IUserService
   Task<ResponseModel> GetUserToken(UserSubmitModel userSubmitModel);
   Task<ResponseModel> DisableToken(disableTokenModel disableTokenModel);
   Task<ResponseModel> GetTokenDetails(string tokenId);
+  Task<ResponseModel> GetUserDetails(disableTokenModel disableTokenModel);
 }
 

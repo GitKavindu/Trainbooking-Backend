@@ -57,5 +57,15 @@ public class UserController : ControllerBase
       HttpContext.Response.StatusCode = responseModel.ErrCode;
 
       return responseModel;
+    }
+
+    [HttpPost("GetUserDetails")] 
+    public async Task<ResponseModel> GetUserDetails(disableTokenModel disableTokenModel)
+    {
+      ResponseModel responseModel=await _userService1.GetUserDetails(disableTokenModel);  
+
+      HttpContext.Response.StatusCode = responseModel.ErrCode;
+
+      return responseModel;
     }  
 }
