@@ -19,7 +19,7 @@ Interfaces/bin
 Interfaces/obj
 
 #ignore .vscode in Project
-./.vscode/*
+.vscode/
 
 #ignore .vscode in Sql
 Sql/.vscode
