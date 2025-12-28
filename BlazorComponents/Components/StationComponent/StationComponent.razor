@@ -1,0 +1,266 @@
+@using BlazorComponents.Components.StationComponent.AddEditStationComponent;
+
+<div class="filters">
+    <select id="filterType" title="Filter By:" @bind="selectedModel">
+        <option value="id">Station ID</option>
+        <option value="name">Station Name</option>
+    </select>
+
+    <input id="filterInput" @bind-value="StationFilter" @bind-value:event="oninput"  placeholder="Search..." />
+</div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">@ModalTitle</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="closeClick">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          @if(ActivateAddEditStationComp==true)
+          {
+            <AddEditStationComponent @bind-Station="Station" />
+          }
+        
+        </div>
+  
+      </div>
+    </div>
+  </div>
+  
+<div class="container-lg mt-4 mb-4">
+    <div class="card shadow border-primary">
+        <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+            <div>
+                <i class="fas fa-subway mr-2"></i>
+                <strong class="h5 mb-0">Stations</strong>
+            </div>
+            <img src="images/icons/train_2.svg" height="50" alt="Booking Icon">
+        </div>
+
+        <div class="card-body">
+          <div class="mb-3 d-flex align-items-center justify-content-between">
+              <span class="text-muted d-none d-lg-block">Select a station and edit <b>Or</b> Add a new station</span>
+              <!-- Button trigger modal -->
+              <button type="button" class="btn btn-primary float-right m-2" 
+                data-toggle="modal" data-target="#exampleModal" @onclick="addClick" data-backdrop="static" data-keyboard="false" >
+                    Add station
+              </button>
+          </div>
+          
+          @if(_screenWidth>990)
+          {
+            <!-- On large screens -->
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="thead-light">
+                        <tr class="text-center">
+                            <th  @onclick='() => sortResult("station_id")'>
+                              Station Id
+                              @if(station_id==true)
+                              {
+                                <span>@(asc ? "▲" : "▼")</span>
+                              }
+                            </th>
+                            <th  @onclick='() => sortResult("station_name")'>
+                              Station Name
+                              @if(station_name==true)
+                              {
+                                <span>@(asc ? "▲" : "▼")</span>
+                              }
+                            </th>
+                            <th>Created Date</th>
+                            <th>Last Updated</th>
+                            <th colspan="2">Options</th>
+                        </tr>
+                    </thead>
+
+                    @if(stationList!=null && stationList.Count()!=0)
+                    {
+                      <tbody>
+                        @foreach (var dataItem in getVisibleRows())
+                        {
+
+                                <tr class="table-row text-center">
+                                    <td>@GetStationId(dataItem.station_id)</td>
+                                    <td>
+                                      <strong>@dataItem.station_name</strong><br>
+                                    </td>
+                                    <td>@dataItem.created_date</td>
+
+                                    @if (dataItem.lastUpdated_date == null)
+                                    {
+                                      <td> ---------------</td>
+                                    }
+                                    else
+                                    {
+                                      <td>@dataItem.lastUpdated_date</td>
+                                    }                                   
+                                   
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-light mr-1"
+                                            data-toggle="modal" data-target="#exampleModal" @onclick="()=> editClick(dataItem)" data-backdrop="static" data-keyboard="false">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-fill" viewBox="0 0 16 16">
+                                              <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.5.5 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11z"/>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-light mr-1" @onclick="() => deleteClick(dataItem.station_id)">
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                          </svg>
+                                        </button>
+                                    </td>
+                                </tr>                         
+                         
+                        }
+                        
+                      </tbody>
+                    }
+                    
+                </table>
+            </div>
+          }
+          else
+          {
+              <!-- On small screens -->
+            
+                @if(stationList!=null && stationList.Count()!=0)
+                {
+                  
+                      <div class="row thead-custom">
+                          <div class="col">
+                              Station Details
+                          </div>
+                      </div>
+                    
+                      <br>
+                    
+                      
+                    <div> 
+                      @{
+                          int index = 0;
+                      }
+
+                      @foreach (var dataItem in getVisibleRows())
+                      {           
+                        int i=index;                    
+
+                            <div class="row">
+                                <div class="col-2 toggle-container">
+                                        <input type="checkbox" id="@($"toggle{i}")" class="toggle-checkbox" @onclick="() => toggleMoreDetails(i)">
+                                        <label for="@($"toggle{i}")" class="toggle-button"></label>
+                                </div>
+                                <div class="col-5">
+                                  @dataItem.station_name?.ToUpper()
+                                </div>
+                                                      
+                            </div>
+                            
+                            @if(dataItem.showRow==true)
+                            {
+                              
+                                <!-- Station Id -->
+                                <div class="row py-3 border-bottom text-left">
+                                  <div class="col-6 text-muted ">Station Id:</div>
+                                  <div class="col-6 ">@GetStationId(dataItem.station_id)</div>
+                                </div>
+
+                                <!-- Created date -->
+                                <div class="row py-3 border-bottom text-left">
+                                  <div class="col-6 text-muted text-left">Created date:</div><br> 
+                                  <div class="col-6 text-left">@dataItem.created_date</div>
+                                </div>
+
+                                <!-- Updated date -->
+                                <div class="row py-3 border-bottom text-left">
+                                  <div class="col-6 text-muted text-left">Updated date:</div><br> 
+                                  @if (dataItem.lastUpdated_date == null)
+                                  {
+                                    <div class="col-6 text-left">( Not Updated )</div>
+                                  }
+                                  else
+                                  {
+                                    <div class="col-6 text-left">@dataItem.lastUpdated_date</div>
+                                  }                               
+                                  
+                                </div>
+
+                                <div class="d-flex mt-3 align-items-center">
+
+                                  <!-- Edit Button-->
+                                  <div  class="mr-3"> 
+                                    <button class="col-12 btn btn-outline-success mr-2"  
+                                        data-toggle="modal" data-target="#exampleModal" @onclick="()=> editClick(dataItem)" data-backdrop="static" data-keyboard="false">
+                                      Edit Station
+                                    </button>
+                                  </div>
+
+                                  <!-- Delete Button-->
+                                  <div  class="mr-3"> 
+                                    <button class="col-12 btn btn-outline-danger mr-2"  @onclick="()=> deleteClick(dataItem.station_id)">
+                                      Delete Station
+                                    </button>
+                                  </div>
+                                </div>
+                                
+                                <br>
+                              
+                            }
+                                            
+                            <hr>                     
+                                                 
+                        index++;
+                      }
+                    </div>  
+                  
+                }
+                else
+                {
+                  <p><em>Loading...</em></p>
+                }
+          }
+
+            
+                
+
+
+                
+
+           
+          
+             
+              
+            
+          
+         
+
+          
+
+           <!-- ✅ Styled Pagination Below Table -->
+            @if(stationList!=null && stationList.Count()!=0)
+            {
+              <nav aria-label="Page navigation">
+                  <ul class="pagination justify-content-end mt-4 mb-0">
+                      <li class="page-item @(_navigationService._selectedPage == 1 ? "disabled" : "")" id="prev">
+                          <button class="page-link" tabindex="-1" @onclick="pageBackward" [disabled]="navigationService.selectedPage==1">Previous</button>
+                      </li>
+                      <li class="page-item active disabled">
+                          <a class="page-link">@_navigationService._selectedPage</a>
+                      </li>
+                      <li class="page-item @(_navigationService._selectedPage == _navigationService.GetMaxPageNumber() ? "disabled" : "")" id="next">
+                          <button class="page-link" @onclick="pageForward" [disabled]="navigationService.selectedPage==navigationService.getMaxPageNumber()">Next</button>
+                      </li>
+                  </ul>
+              </nav>
+            }
+            
+
+        </div>
+    </div>
+</div>

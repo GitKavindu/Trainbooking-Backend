@@ -1,0 +1,153 @@
+<div class="register-container">
+  <h2>Create Account</h2>
+
+   <EditForm  Model="this" OnValidSubmit="onSubmit" >
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input id="username"  placeholder="Enter your username" 
+          @bind-value="UserName" @onfocus="OnUsernameFocus" @onblur="OnUsernameBlur"/>
+
+        @if(usernameTouched==true && usernameBlured==true && IsUserNameValid()==false)
+        {
+          <span class="error-message">
+            Username is required.
+          </span>
+        }
+        
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+     <input id="email" type="email" pattern="^[A-Za-z0-9._%+-]+@@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$" placeholder="Enter your email" 
+          @bind-value="Email" @onfocus="OnemailFocus" @onblur="OnemailBlur"/>
+
+      @if(emailTouched==true && emailBlured==true && string.IsNullOrWhiteSpace(Email) )
+      {
+        <span class="error-message">
+          Email is required.
+        </span>
+      }
+      else if(emailTouched==true && emailBlured==true && IsEmailValid()==false)
+      {
+        <span class="error-message">
+          Invalid email format.
+        </span>
+      }
+      
+    </div>
+
+    <div class="form-group">
+      <label for="fullname">Fullname</label>
+      <input id="fullname" pattern="[A-Za-z\s]*"  placeholder="Enter your fullname"
+          @bind-value="Fullname" @onfocus="OnFullnameFocus" @onblur="OnFullnameBlur"/>
+      @if(FullnameTouched==true && FullnameBlured==true && string.IsNullOrWhiteSpace(Fullname))
+      {
+        <span class="error-message">
+          Fullname is required.
+        </span>
+      }
+      
+    </div>
+
+    <!-- Prefered Name Dropdown -->
+    @if(string.IsNullOrWhiteSpace(Fullname)==false && IsFullnameValid())
+    {
+      <div class="form-group">
+        <label for="preferedName">Prefered Name</label>
+        <select id="preferedName">
+          <option value="" disabled selected>Select prefered name</option>
+          @foreach (var part in nameParts)
+          {
+            <option value="@part">
+              @part
+            </option>
+          }          
+        </select>
+        @if(PreferedNameTouched==true && PreferedNameBlured==true && string.IsNullOrWhiteSpace(PreferedName))
+        {
+          <span class="error-message">
+            Prefered name is required.
+          </span>
+        }
+        
+      </div>
+    }
+    
+
+    <div class="form-group">
+      <label for="nationalId">National Id</label>
+      <input id="nationalId" placeholder="Enter National ID" pattern="^(\d{11}|\d{9}V)$"  inputmode="text"
+          @bind-value="NationalId" @onfocus="OnNationalIdFocus" @onblur="OnNationalIdBlur"/>
+
+      @if(NationalIdTouched==true && NationalIdBlured==false && IsNationalIdValid())
+      {
+          <span class="error-message" >
+            ID number is not a valid format.
+          </span>
+      }
+     
+    </div>
+
+    <div class="form-group">
+      <label for="mobileNo">Mobile Number</label>
+      <input id="mobileNo"  pattern="^\d{10}$" placeholder="Enter Mobile number"  inputmode="numeric"
+        @bind-value="MobileNo" @onfocus="OnMobileNoFocus" @onblur="OnMobileNoBlur"/>
+      
+      @if(MobileNoTouched==true && MobileNoBlured==true && IsMobileNoValid()==false)
+      {
+        <span class="error-message">
+          Mobile number is not a valid format.
+        </span>
+      }
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input id="password" type="password" formControlName="password" placeholder="Enter your password" 
+        @bind-value="UserPassword" @onfocus="OnpasswordFocus" @onblur="OnpasswordBlur"/>
+
+        @if(passwordTouched==true && passwordBlured==true && string.IsNullOrWhiteSpace(UserPassword))
+        {
+            <span class="error-message" *ngIf="getControl('password').touched && getControl('password').errors?.['required']">
+            Password is required.
+            </span>
+        }
+        else if(passwordTouched==true && passwordBlured==true && UserPassword.Length<4)
+        {
+            <span class="error-message" *ngIf="getControl('password').touched && getControl('password').errors?.['minlength']">
+            Password must be at least 4 characters.
+            </span>
+        }
+    </div>
+
+    <div class="form-group">
+      <label for="retypePassword">Retype Password</label>
+      <input id="retypePassword" type="password" placeholder="Enter your password again" 
+          @bind-value="RetypePassword" @onfocus="OnRetypePasswordFocus" @onblur="OnRetypePasswordBlur"/>
+      
+      @if(RetypePasswordTouched==true && RetypePasswordBlured==true && IsRetypePasswordValid()==false)
+      {
+        <span class="error-message">
+          Type the same passord you typed before
+        </span>
+      }
+      
+    </div>
+    
+    <div class="form-buttons">
+      <button class="btn btn-primary" type="submit" disabled="@invalid">Register</button>
+      <button class="btn btn-secondary" type="button" @onclick="onClear">Clear</button>
+    </div>
+    <br>
+    <div class="form-group">
+      @if(errMessege!="")
+      {
+        <span class="error-message">
+          @errMessege
+        </span>
+      }
+     
+    </div>
+  </EditForm>
+
+</div>
