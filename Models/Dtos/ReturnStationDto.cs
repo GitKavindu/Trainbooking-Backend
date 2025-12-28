@@ -25,4 +25,5 @@ public class ReturnStationDto
           : DateTime.Parse(value);
   }
 
+  public bool isActive{get;set;}
 }

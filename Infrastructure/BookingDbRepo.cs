@@ -282,7 +282,7 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnJourneyStationDto> allSeats=await con.QueryAsync<ReturnJourneyStationDto>(
-            @$"SELECT j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
+            @$"SELECT j.schedule_id AS scheduleId,j.scheduled_start_time AS startTime,t.scheduled_start_time AS endTime,j.journey_id AS startJourneyId,t.journey_id AS endJourneyId,
                         s.station_name AS StartStation,s.station_id AS startStationId,s.seq_no AS startSeqNo,
 						            n.station_name AS EndStation,n.station_id AS endStationId,n.seq_no AS endSeqNo
                 FROM journey j
@@ -335,21 +335,25 @@ public class BookingDbRepo:IBookingDbRepo
           
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnBookingDetailsDto> allSeats=await con.QueryAsync<ReturnBookingDetailsDto>(
-          @$"SELECT booking_id AS bookingId,netPrice AS price,is_canceled AS isCanceled,bookingDate AS bookingDateTime,jt.name AS trainName
+          @$"SELECT booking_id AS bookingId
               FROM booking b
               INNER JOIN (
                 SELECT username FROM token WHERE token_id=@token_id) t ON t.username=b.booked_by
-              INNER JOIN journey j ON b.schedule_id=j.schedule_id AND j.is_active=true
-              INNER JOIN train jt ON jt.train_no = j.train_no AND jt.seq_no = j.train_seq_no
-              GROUP BY booking_id,booked_by,netPrice,is_canceled,j.schedule_id,jt.name"
+              ORDER BY booking_id DESC"
             ,para, commandType: CommandType.Text);
 
+          ReturnBookingDetailsDto[] allseatsArr=allSeats.ToArray();
+
+          for(int i=0;i<allseatsArr.Length;i++)
+          {
+            allseatsArr[i]=(await GetBookingDetails(allseatsArr[i].bookingId)).Data;
+          }
           
           return new ResponseModelTyped<IEnumerable<ReturnBookingDetailsDto>>()
           {
               Success = true,
               ErrCode = 200,
-              Data = allSeats
+              Data = allseatsArr
           };
 
         }
@@ -502,10 +506,13 @@ public class BookingDbRepo:IBookingDbRepo
           ReturnBookingDetailsDto bookingDetails=await con.QueryFirstAsync<ReturnBookingDetailsDto>(
             @$"SELECT booking_id AS bookingId, booked_by AS bookedBy,netPrice AS price,is_canceled AS isCanceled,
                       bookingDate AS bookingDateTime,st.train_no AS trainNo,st.seq_no AS trainSeqNo,st.name AS trainName,sj.schedule_id AS scheduleId,
-                      sj.station_no AS fromStationNo,sj.seq_no AS fromStationSeqNo,ej.station_no AS toStationNo,ej.seq_no AS toStationSeqNo
+                      ss.station_name AS fromStation,sj.station_no AS fromStationNo,sj.seq_no AS fromStationSeqNo,
+                      es.station_name AS toStation,ej.station_no AS toStationNo,ej.seq_no AS toStationSeqNo
                 FROM booking b
                 INNER JOIN journey sj ON b.from_journey_id=sj.journey_id AND sj.is_active=true
+				        INNER JOIN station ss ON sj.seq_no = ss.seq_no AND sj.station_no = ss.station_id
                 INNER JOIN journey ej ON b.to_journey_id=ej.journey_id AND ej.is_active=true
+				        INNER JOIN station es ON ej.seq_no = es.seq_no AND ej.station_no = es.station_id
                 INNER JOIN train st ON st.train_no = sj.train_no AND st.seq_no = sj.train_seq_no
                 INNER JOIN train et ON et.train_no = ej.train_no AND et.seq_no = ej.train_seq_no
                 WHERE booking_id=@booking_id"

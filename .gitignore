@@ -18,6 +18,9 @@ Models/obj
 Interfaces/bin
 Interfaces/obj
 
+#ignore .vscode in Project
+.vscode/
+
 #ignore .vscode in Sql
 Sql/.vscode
 

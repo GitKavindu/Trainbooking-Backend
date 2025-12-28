@@ -55,8 +55,11 @@ namespace TrainBookingSystem.TrainApi
 
             //Add Serializer
             services.AddControllersWithViews().AddNewtonsoftJson(options=>
-                options.SerializerSettings.ReferenceLoopHandling=Newtonsoft.Json.ReferenceLoopHandling.Ignore)
-                .AddNewtonsoftJson(options=>options.SerializerSettings.ContractResolver=new DefaultContractResolver());
+                        options.SerializerSettings.ReferenceLoopHandling=Newtonsoft.Json.ReferenceLoopHandling.Ignore)
+                    .AddNewtonsoftJson(options=>
+                        options.SerializerSettings.ContractResolver=new DefaultContractResolver());
+            
+            //Add Swagger
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "TrainBookingSystem", Version = "v1" });

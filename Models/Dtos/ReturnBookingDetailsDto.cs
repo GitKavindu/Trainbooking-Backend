@@ -15,8 +15,11 @@ namespace Models.Dtos
 
         public int fromStationNo{get;set;}
         public int fromStationSeqNo{get;set;}
+        public string ?fromStation{get;set;}
+        
         public int toStationNo{get;set;}
         public int toStationSeqNo{get;set;}
+        public string ?toStation{get;set;}
 
         private decimal _price;
         public decimal price{

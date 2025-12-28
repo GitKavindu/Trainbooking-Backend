@@ -129,7 +129,9 @@ public class TrainDbRepo:ITrainDbRepo
         {
           // Call the function with the parameters and retrieve the results
           IEnumerable<ReturnTrainnDto> results=await con.QueryAsync<ReturnTrainnDto>(
-            $"SELECT train_no,seq_no AS train_seq_no,name AS train_name,added_by,TO_CHAR(added_date, 'YYYY-MM-DD') AS created_date,TO_CHAR(modified_date, 'YYYY-MM-DD') AS lastUpdated_date FROM train WHERE is_active=true"
+            @$"SELECT train_no,seq_no AS train_seq_no,name AS train_name,added_by,
+                  TO_CHAR(added_date, 'YYYY-MM-DD') AS created_date,TO_CHAR(modified_date, 'YYYY-MM-DD') AS lastUpdated_date,is_active AS isActive 
+                FROM train"
             , commandType: CommandType.Text);
 
           // Return the result
