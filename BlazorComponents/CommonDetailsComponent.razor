@@ -1,0 +1,277 @@
+@using BlazorComponents.Service
+
+<!-- Our quality -->
+<section class="py-5 " id="our-quality">
+        <div class="card-body">
+            
+        </div>
+        <h2 class="text-center mb-4"><b>Why Choose Sri Lankan Railways?</b></h2>
+        <div class="row">
+
+        <!-- Card 1 -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center shadow-sm">
+
+            <div class="card-body">
+                <i class="fas fa-train fa-3x mb-3 text-primary"></i>
+                <h5 class="card-title">Scenic & Comfortable Journeys</h5>
+                <p class="card-text">
+                Experience breathtaking views and a relaxed ride through mountains, coastlines, and countryside.
+                </p>
+            </div>
+            </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center shadow-sm">
+            <div class="card-body">
+            <i class="fas fa-user-friends fa-3x mb-3 text-info"></i>
+            <h5 class="card-title">Supportive Staff</h5>
+            <p class="card-text">
+                Our friendly and professional staff are always ready to assist you for a smooth and pleasant journey.
+            </p>
+            </div>
+        </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 text-center shadow-sm">
+            <div class="card-body">
+                <i class="fas fa-wallet fa-3x mb-3 text-warning"></i>
+                <h5 class="card-title">Affordable & Reliable</h5>
+                <p class="card-text">
+                Travel across the island at low cost without compromising comfort or reliability.
+                </p>
+            </div>
+            </div>
+        </div>
+
+        </div>
+   
+</section>
+
+ <!-- About Us Section -->
+<section class="py-5" id="about-us">
+    <h2 class="text-center mb-4"><b>About Us</b></h2>
+     <div class="row">
+            <div class="col-md mb-4">
+                <div class="card h-100 text-center shadow-sm">
+
+                    <div class="card-body">
+                        <p class="card-text">
+                            The Sri Lankan railway system, a significant part of the island's colonial legacy, has played a vital role in shaping the country’s transportation, economy, and culture. Introduced by the British during colonial rule, the railway was initially developed to serve the economic interests of the British Empire, primarily for the transportation of tea and coffee from the central highlands to the ports for export.
+
+                            The first railway line in Sri Lanka, then known as Ceylon, was opened in 1864. It connected Colombo, the capital, to Ambepussa, covering a distance of 54 kilometers. This initial line was built primarily to facilitate the transport of coffee from the hill country plantations to Colombo’s port. However, when the coffee industry collapsed due to a fungal disease, tea plantations took over, and the railway became even more essential.
+
+                            Under British administration, the railway network expanded significantly. Lines were extended to Kandy, Badulla, Matale, and later to the north and the southern coasts. The hill country line, known for its scenic beauty, became one of the most famous railway journeys in the world. The network not only supported economic growth through agriculture and trade but also became a vital mode of passenger transport.
+
+                            After independence in 1948, the Sri Lanka Government Railway (SLGR) continued to operate the railway system. Though the network suffered from underinvestment and competition from road transport in the latter half of the 20th century, recent years have seen a resurgence of interest. Efforts have been made to modernize the system, improve services, and even reintroduce electric trains in some regions.
+
+                            Today, the Sri Lankan railway is more than just a transport system—it is a symbol of heritage. The iconic blue trains through the central highlands, colonial-era stations, and scenic routes have made it a major attraction for both locals and tourists. While challenges remain, the railway continues to serve as a vital artery of the island, carrying forward its legacy into the modern age.
+                        </p>
+                    </div>
+                </div>
+            </div>
+     </div>
+    
+</section>
+
+<!-- Contact Us Section -->
+@if(this._token!=null)
+{
+    <section class="py-5" id="contact-us" *ngIf="tokenService.returnToken()!=undefined">
+        <div class="container">
+            <h2 class="text-center mb-4"><b>Contact Us</b></h2>
+
+                <div class="login-container">
+            
+                    <EditForm  Model="this" OnValidSubmit="onSubmit">
+                        <div class="form-group">
+                            <label for="Subject">Subject</label>
+                            <input id="Subject" @bind-value="SubjectMessege" @onfocus="OnsubjectMessegeFocus" 
+                                @onblur="OnsubjectMessegeBlur" placeholder="Enter your Subject" />
+
+                            @if(subjectMessegeTouched==true && subjectMessegeBlured==true && string.IsNullOrWhiteSpace(SubjectMessege))
+                            {
+                                <span class="error-message">
+                                    Subject is required.
+                                </span>
+                            }
+                        
+                        </div>
+                    
+                        <div class="form-group">
+                            <label for="Comment">Comment</label>
+                            <input id="Comment" type="Comment" @bind-value="CommentMessege" @bind-value:event="oninput" @onfocus="OnCommentMessegeFocus" 
+                                @onblur="OnCommentMessegeBlur" placeholder="Enter your Comment" />
+                            
+                            @if(commentMessegeTouched==true && commentMessegeBlured==true && string.IsNullOrWhiteSpace(CommentMessege))
+                            {
+                                <span class="error-message" *ngIf="getControl('Comment').touched && getControl('Comment').errors?.['required']">
+                                    Comment is required.
+                                </span>
+                            }
+                            else if(commentMessegeTouched==true && commentMessegeBlured==true && CommentMessege.Length<4)
+                            {
+                                <span class="error-message" *ngIf="getControl('Comment').touched && getControl('Comment').errors?.['minlength']">
+                                    Comment must be at least 4 characters.
+                                </span>
+                            }
+                            
+                            
+                        </div>
+                        
+                        <div class="form-buttons">
+                            <button class="btn btn-primary" type="submit"  disabled="@invalid">Send</button>
+                            <button class="btn btn-secondary" type="button" @onclick="onClear">Clear</button>
+                        </div>
+
+                        <br>
+
+                        <div class="form-group">
+                            @if(errMessege!="")
+                            {
+                                <span class="error-message">
+                                    @errMessege
+                                </span>
+                            }
+                            
+                        </div>
+
+                    </EditForm>
+
+                    @if(showSuccessMessage==true)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert" id="alert">
+                            <strong>Success!</strong> Comment submitted successfully.
+                        </div>
+                    }
+                    
+                </div>                
+
+        </div>
+    
+    </section>
+}
+
+
+
+@code{
+
+    [Inject]
+    private SharedService service { get; set; }
+
+    private string errMessege="";
+
+    private bool showSuccessMessage=false;
+    private ReturnTokenDto?  _token;
+
+    //Form state
+    private bool invalid = true;
+
+    public string _subjectMessege="";
+    public string SubjectMessege
+    { 
+        get => _subjectMessege;
+        set
+        {
+           _subjectMessege=value;
+           invalid=ValidateFields();
+        }
+    }
+
+    private bool subjectMessegeTouched=false;
+    private bool subjectMessegeBlured=false;
+
+    private void OnsubjectMessegeFocus() =>  subjectMessegeTouched =true;
+
+    private void OnsubjectMessegeBlur()
+    {
+        invalid=ValidateFields();
+        subjectMessegeBlured =true;
+    }
+
+    public string _commentMessege="";
+
+    public string CommentMessege 
+    { 
+        get => _commentMessege;
+        set
+        {
+           _commentMessege=value;
+           invalid=ValidateFields();
+        }
+    }
+
+    private bool commentMessegeTouched=false;
+    private bool commentMessegeBlured=false;
+
+    private void OnCommentMessegeFocus() =>  commentMessegeTouched =true;
+
+    private void OnCommentMessegeBlur()
+    {
+        invalid=ValidateFields();
+        commentMessegeBlured =true;
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+      if(firstRender)
+      {
+        await UpdateToken();
+        this.service._tokenService.SubscribeToken(HandleTokenChanged);
+      }
+    }
+
+    private void HandleTokenChanged()
+    {
+        this.UpdateToken();
+        
+    }
+
+    public void Dispose()
+    {
+        this.service._tokenService.UnsubscribeToken(HandleTokenChanged) ;
+    }
+
+    private bool ValidateFields()
+    {
+        if(!string.IsNullOrWhiteSpace(SubjectMessege) && !string.IsNullOrWhiteSpace(CommentMessege) && CommentMessege.Length>=4)
+        {
+            return false;
+        }
+
+        return true;
+    }    
+
+    private async Task UpdateToken()
+    {
+      this._token=await service._tokenService.ReturnToken();
+      StateHasChanged();
+    }
+
+    private async Task onSubmit()
+    {
+        this.showSuccessMessage=true;
+        this.onClear();
+        await Task.Delay(3000);
+        this.showSuccessMessage=false;
+    }
+
+    private void onClear()
+    {
+        this.SubjectMessege="";
+        this.CommentMessege="";
+
+        this.subjectMessegeTouched=false;
+        this.subjectMessegeBlured=false;
+
+        this.commentMessegeTouched=false;
+        this.commentMessegeBlured=false;
+
+        this.invalid=this.ValidateFields();
+    }
+}

@@ -1,0 +1,32 @@
+
+<div class="form-froup row">
+    <div class="col-lg-2 col-12  text-lg-left  text-center">
+        <label class="coll-form-label">Station Name</label>
+        </div>
+        <br><br>
+    <div class="col-lg-10 col-12">
+        <input type="text" class="form-control text-lg-left text-center" @bind="Stationname" placeholder="Enter station name">
+    </div>
+    
+    <br class="d-lg-none d-block"><br class="d-lg-none d-block">
+
+    @if(Stationid==null)
+    {
+        <div class="col-12">
+            <button @onclick="addStation" class="btn btn-primary">
+                Add
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="col-12">
+            <button @onclick="editStation" class="btn btn-primary">
+                Edit
+            </button>
+        </div>
+    }
+   
+      
+</div>
+

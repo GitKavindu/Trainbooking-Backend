@@ -14,9 +14,17 @@ Service/obj
 Models/bin
 Models/obj
 
-#ignore bin and obj Interfaces
+#ignore bin and obj in Interfaces
 Interfaces/bin
 Interfaces/obj
+
+#ignore bin and obj in BlazorServer
+BlazorServer/bin
+BlazorServer/obj
+
+#ignore bin and obj in BlazorComponents
+BlazorComponents/bin
+BlazorComponents/obj
 
 #ignore .vscode in Project
 .vscode/

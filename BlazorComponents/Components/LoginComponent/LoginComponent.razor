@@ -1,0 +1,62 @@
+@using System
+
+<div class="login-container">
+    <h2>Log In</h2>
+    <EditForm  Model="this" OnValidSubmit="onSubmit" >
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" class="input" placeholder="Enter your username" 
+              @bind-value="UserName" @onfocus="OnUsernameFocus" @onblur="OnUsernameBlur"/>
+        
+        @if(usernameTouched==true && usernameBlured==true && string.IsNullOrWhiteSpace(UserName))
+        {
+          <span class="error-message">
+            Username is required.
+          </span>
+        }
+      </div>
+  
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" class="input" type="password" placeholder="Enter your password" 
+            @bind-value="UserPassword" @onfocus="OnpasswordFocus" @onblur="OnpasswordBlur" />
+      
+        @if(passwordTouched==true && passwordBlured==true && string.IsNullOrWhiteSpace(UserPassword))
+        {
+           <span class="error-message" *ngIf="getControl('password').touched && getControl('password').errors?.['required']">
+            Password is required.
+          </span>
+        }
+        else if(passwordTouched==true && passwordBlured==true && UserPassword.Length<4)
+        {
+          <span class="error-message" *ngIf="getControl('password').touched && getControl('password').errors?.['minlength']">
+            Password must be at least 4 characters.
+          </span>
+        }
+
+      </div>
+      
+      <div class="form-buttons">
+        <button class="btn btn-primary" type="submit" disabled="@invalid">Login</button>
+        <button class="btn btn-secondary" type="button" @onclick="onClear">Clear</button>
+      </div>
+      <br>
+      <div class="form-group">
+         @if(errMessege!="")
+         {
+            <span class="error-message">
+                @errMessege
+            </span>
+         }
+      </div>
+
+    </EditForm>
+
+</div>
+
+@code
+{   
+    
+
+}
+  

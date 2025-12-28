@@ -1,0 +1,38 @@
+
+<div>
+
+    <div class="row">
+        <div class="col-12 text-center">
+            <h1>Welcome to Sri Lankan Railways</h1>
+            <br>
+        </div> 
+        
+        @if(_token==null)
+        {
+            <div class="col-12 text-center">
+                <button type="button" class="btn btn-primary btn-lg" @onclick="goToLogin">Login</button>
+                <br class="d-lg-none"><br class="d-lg-none">
+                <button type="button" class="btn btn-primary btn-lg" @onclick="goToRegister">Register</button>
+            </div>
+        }
+        else if(_token.isAdmin==false)
+        {
+            <div class="col-12 text-center">
+                <button type="button" class="btn btn-primary btn-lg" @onclick="goToBooking">Book a Train</button>
+                <button type="button" class="btn btn-primary btn-lg" @onclick="goToMyBookings">My Bookings</button>
+            </div>
+        }
+        else
+        {
+            <div class="col-12 text-center">
+                <button type="button" class="btn btn-primary btn-lg" @onclick="goToSchedule">Place Train Schedule</button>
+            </div> 
+        }
+        
+        
+
+         
+    </div>
+    
+    <img src="gallery-4.jpg" alt="sdasds">
+</div>

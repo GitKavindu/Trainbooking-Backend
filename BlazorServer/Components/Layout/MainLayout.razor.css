@@ -1,0 +1,33 @@
+
+/* My CSS*/
+
+/* Main app layout */
+.app-wrapper {
+    min-height: 100vh;
+  }
+  
+  @media (min-width: 990px) {
+    .container {
+        max-width: 1500px;
+    }
+  }
+
+   /** For Images **/
+
+  .pos{
+    position: absolute;
+  
+    opacity: 0.4;
+    pointer-events: none;
+    
+    z-index: -1;
+  }
+  
+  img{
+    height: 100%;
+    width: 100%;
+  }
+
+  .main-con{
+    position: relative;
+  }

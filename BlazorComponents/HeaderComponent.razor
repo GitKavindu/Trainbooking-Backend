@@ -1,0 +1,184 @@
+﻿@using BlazorComponents.Service
+@using Microsoft.JSInterop
+<nav class="navbar navbar-expand-lg main-header">
+    <div class="container header-container">
+       
+        <div class="col-lg-4 col-10 logo">
+          <h1 class="text-lg-left text-center">Train Booking <br class="d-block d-md-none">System</h1>
+        </div>
+
+        <div class="col-2 d-lg-none">
+            <button class="navbar-toggler" data-toggle="collapse"
+              data-target="#navbarCollapse" aria-controls="nav" aria-label="expand navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+
+        <div class="col-lg-6 col-12 collapse navbar-collapse " id="navbarCollapse">
+          <div class="navbar-nav mx-auto  py-3 py-lg-0 px-3 ">
+            <a href="/" class="nav-item nav-link active">Home</a>
+            <a href="@getCurrentUrl("about-us")" class="nav-item nav-link">About Us</a>
+            <a  href="@getCurrentUrl("our-quality")" class="nav-item nav-link">Our Quality</a>
+
+            @if (this._token != null)
+            {
+                <div class="nav-item dropdown">
+                    <!-- FIXED: Bootstrap 4 uses data-toggle -->
+                    <div class="nav-link" data-toggle="dropdown">Pages</div>
+                    @if (this._token.isAdmin == true)
+                    {
+                        <div class="dropdown-menu  border-0 m-0">
+                            <a href="/station" class="dropdown-item">Station</a>
+                            <a href="/train" class="dropdown-item">Train</a>
+                            <a href="/apartment" class="dropdown-item">Apartment</a>
+                            <a href="/schedule" class="dropdown-item">Schedule</a>
+                            <a href="/users" class="dropdown-item">Users</a>
+                        </div>
+                    }
+                    
+                    @if (this._token.isAdmin == false)
+                    {
+                        <div class="dropdown-menu  border-0 m-0">
+                        
+                            <a href="/booking" class="dropdown-item">Booking</a>
+                            <a href="/mybookings" class="dropdown-item">My bookings</a>
+                        </div>
+                    }
+                   
+                </div>
+
+                <a href="@getCurrentUrl("contact-us")" class="nav-item nav-link">Contact Us</a>
+            }            
+
+            <div class="nav-item dropdown d-block d-lg-none">
+              <!-- FIXED: Bootstrap 4 uses data-toggle -->
+              <div class="nav-link" data-toggle="dropdown">@_profileText</div>
+
+               @if (this._token == null)
+               {
+                    <div class="dropdown-menu  border-0 m-0">
+                        <a href="/login" class="dropdown-item">Login</a>
+                        <a href="/register" class="dropdown-item">Register</a>
+                    </div>
+               }
+               else
+               {
+                    <div class="dropdown-menu  border-0 m-0">
+                        <a class="dropdown-item" @onclick="logOut">Logout</a>
+                        <a href="/profile" class="dropdown-item">My Profile</a>
+                    </div>
+               }
+             
+             
+            </div>
+          </div>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div class="col-0.25"></div>
+        <div class="col-1.5 nav-item dropdown d-none d-lg-block">
+         
+          <div class="nav-link text-center" data-toggle="dropdown" >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16" >
+              <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+              <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+            </svg> @_profileText
+          </div>
+
+          <div class="dropdown-menu  border-0 m-0">
+            @if (this._token == null)
+            {
+                <a href="/login" class="dropdown-item">Login</a>
+                <a href="/register" class="dropdown-item">Register</a>
+            }
+            else
+            {
+                <div class="dropdown-item" @onclick="logOut">Logout</div>
+                <a href="/profile" class="dropdown-item">My Profile</a>
+            }
+
+          </div>
+        </div>
+
+        <div class="col-0.25"></div>        
+
+    </div>
+</nav>
+
+@code 
+{   
+    [Inject]
+    NavigationManager Navigation { get; set; }
+
+    [Inject]
+    private SharedService service { get; set; }
+    private ReturnTokenDto?  _token; 
+
+    private string _profileText="";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+      if(firstRender)
+      {
+        
+        await GetProfileName();
+        this.service._tokenService.SubscribeToken(HandleTokenChanged);
+      }
+      
+      //await this.getProfileText(firstRender);
+    }
+
+    private void HandleTokenChanged()
+    {
+        this.GetProfileName();
+        
+    }
+
+    public void Dispose()
+    {
+        this.service._tokenService.UnsubscribeToken(HandleTokenChanged) ;
+    }
+
+    private async Task GetProfileName()
+    {
+      this._token=await service._tokenService.ReturnToken();
+    
+      if(this._token !=null)
+        this._profileText=this._token.PreferedName;
+      else
+        this._profileText="Login / Register";
+
+      StateHasChanged();
+
+    }
+
+    private async Task logOut()
+    {
+      this._token=await service._tokenService.ReturnToken();
+
+      if(this._token!=null)
+      {
+        this._token=null;
+        await service._tokenService.RemoveTokenAsync();
+        Navigation.NavigateTo("/login");
+
+      }        
+      else
+        await service.print("token not found!");
+        
+    }
+
+    private string getCurrentUrl(string fragment)
+    {
+      var builder = new UriBuilder(Navigation.Uri)
+      {
+          Fragment = fragment.TrimStart('#')  // replace or add fragment
+      };
+
+      return builder.Uri.ToString();
+    }
+
+
+    
+
+}

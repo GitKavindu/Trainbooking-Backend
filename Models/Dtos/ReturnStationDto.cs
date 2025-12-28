@@ -26,4 +26,5 @@ public class ReturnStationDto
   }
 
   public bool isActive{get;set;}
+  public bool showRow;
 }
