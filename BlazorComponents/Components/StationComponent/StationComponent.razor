@@ -153,7 +153,7 @@
 
                             <div class="row">
                                 <div class="col-2 toggle-container">
-                                        <input type="checkbox" id="@($"toggle{i}")" class="toggle-checkbox" @onclick="() => toggleMoreDetails(i)">
+                                        <input type="checkbox" id="@($"toggle{i}")" class="toggle-checkbox" checked="@dataItem.showRow" @onclick="() => toggleMoreDetails(i)">
                                         <label for="@($"toggle{i}")" class="toggle-button"></label>
                                 </div>
                                 <div class="col-5">

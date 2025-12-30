@@ -4,9 +4,12 @@ using Models.Dtos;
 using System.Text.Json;
 
 namespace BlazorComponents.Service;
-public class TokenService:ITokenService
+public class TokenService:ITokenService, IAsyncDisposable
 {
     private IJSRuntime _JS;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<TokenService>? _dotNetRef;
+
     private event Action? OnChange;
 
     public TokenService(IJSRuntime JS)
@@ -44,13 +47,14 @@ public class TokenService:ITokenService
 
     public async Task<ReturnTokenDto> SetToken(ReturnTokenDto token)
     {
+        await EnsureJsSubscriptionAsync();
         await _JS.InvokeVoidAsync(
             "localStorage.setItem",
             "userToken",
             JsonSerializer.Serialize(token)
         );
         
-        OnChange?.Invoke();
+        await _module!.InvokeVoidAsync("notify");
         return token;
     }
 
@@ -75,13 +79,32 @@ public class TokenService:ITokenService
 
     public async Task RemoveTokenAsync()
     {
+        await EnsureJsSubscriptionAsync();
         await _JS.InvokeVoidAsync("localStorage.removeItem", "userToken");
-        OnChange?.Invoke();
+        await _module!.InvokeVoidAsync("notify");
     }
 
     public Action? GetOnChange()
     {
         return OnChange;
+    }
+
+    [JSInvokable]
+    public void OnTokenChanged()
+    {
+        OnChange?.Invoke();
+    }
+
+    private async Task EnsureJsSubscriptionAsync()
+    {
+        if (_module != null)
+            return;
+
+        _module = await _JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorComponents/app.js");
+
+        _dotNetRef = DotNetObjectReference.Create(this);
+
+        await _module.InvokeVoidAsync("subscribe", _dotNetRef);
     }
 
     public void SubscribeToken(Action handler)
@@ -93,6 +116,18 @@ public class TokenService:ITokenService
     {
         OnChange -= handler;
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module != null && _dotNetRef != null)
+        {
+            await _module.InvokeVoidAsync("unsubscribe", _dotNetRef);
+            await _module.DisposeAsync();
+        }
+
+        _dotNetRef?.Dispose();
+    }
+    
 }
 
 public interface ITokenService

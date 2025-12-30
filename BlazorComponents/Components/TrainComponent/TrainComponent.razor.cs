@@ -5,8 +5,8 @@ using Microsoft.JSInterop;
 namespace BlazorComponents.Components.TrainComponent
 {
     public partial class TrainComponent:ComponentBase
-    {
-        private DotNetObjectReference<DeviceService>? _ref;
+    {   
+        private Action<int> _widthHandler;
         private int _screenWidth;
 
         private DeviceService _deviceService;
@@ -23,19 +23,15 @@ namespace BlazorComponents.Components.TrainComponent
             if (firstRender)
             {
                 //Subscribe First
-                _deviceService.WidthChanged += OnScreenWidthChanged;
-
-                _ref = DotNetObjectReference.Create(_deviceService);
-                await _deviceService.ListenOnScreenChanges(_ref);
+                _widthHandler = OnScreenWidthChanged;
+                await _deviceService.SubscribeToken(_widthHandler);
 
             }
         }
         
         public async Task Dispose()
         {
-            _deviceService.WidthChanged -= OnScreenWidthChanged;
-            _ref?.Dispose();
-            await _deviceService.DisposeModuleAsync();
+            _deviceService.UnsubscribeToken(_widthHandler);
         }
 
         private async void OnScreenWidthChanged(int width)

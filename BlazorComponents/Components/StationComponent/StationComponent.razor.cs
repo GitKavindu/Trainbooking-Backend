@@ -21,12 +21,12 @@ namespace BlazorComponents.Components.StationComponent
 
         private List<ReturnStationDto>? stationListWithoutFilter;
         private DeviceService _deviceService;
+        private Action<int> _widthHandler;
         private NavigationService<ReturnStationDto> _navigationService;
 
         private SharedService service ;
         private IStationService _stationService;
 
-        private DotNetObjectReference<DeviceService>? _ref;
         private int _screenWidth;
 
         private bool asc=true; //represents ascending order
@@ -74,10 +74,8 @@ namespace BlazorComponents.Components.StationComponent
             if (firstRender)
             {
                 //Subscribe First
-                _deviceService.WidthChanged += OnScreenWidthChanged;
-
-                _ref = DotNetObjectReference.Create(_deviceService);
-                await _deviceService.ListenOnScreenChanges(_ref);
+                _widthHandler = OnScreenWidthChanged;
+                await _deviceService.SubscribeToken(_widthHandler);
 
                 //await this.RefreshStationList();
                 
@@ -88,9 +86,8 @@ namespace BlazorComponents.Components.StationComponent
 
         public async Task Dispose()
         {
-            _deviceService.WidthChanged -= OnScreenWidthChanged;
-            _ref?.Dispose();
-            await _deviceService.DisposeModuleAsync();
+            _deviceService.UnsubscribeToken(_widthHandler);
+          
         }
 
         private async void OnScreenWidthChanged(int width)

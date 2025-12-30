@@ -134,7 +134,7 @@ app-booking {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
 
-    background: url('../public/gallery-4.jpg') center/cover no-repeat;
+
     opacity: 0.4;        /* Adjust this value to control image strength */
 
     z-index: -1;

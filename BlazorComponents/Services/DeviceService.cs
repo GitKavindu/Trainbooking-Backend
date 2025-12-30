@@ -1,12 +1,15 @@
+using System.Threading.Tasks;
 using Microsoft.JSInterop;
 namespace BlazorComponents.Service
 {
-    public class DeviceService
+    public class DeviceService:IAsyncDisposable
     {
         private IJSObjectReference? _module;
-        public event Action<int>? WidthChanged;
+        private event Action<int>? WidthChanged;
+        private DotNetObjectReference<DeviceService> _dotNetRef;
 
         private IJSRuntime _JS;
+        private int _width;
 
         public DeviceService(IJSRuntime JS)
         {
@@ -18,6 +21,7 @@ namespace BlazorComponents.Service
         {
             try
             {
+                _width = width;
                 WidthChanged?.Invoke(width);    
             }
             catch(Exception ex)
@@ -27,20 +31,36 @@ namespace BlazorComponents.Service
                 
         }
 
-        public async Task ListenOnScreenChanges(DotNetObjectReference<DeviceService> dotNetRef)
+        public async Task ListenOnScreenChanges()
         {
             // Import JS module
-             if (_module == null)
+            if (_module != null)
             {
-                _module = await _JS.InvokeAsync<IJSObjectReference>(
-                    "import", "./_content/BlazorComponents/CallDotnetInstance.js");
+                return;
             }
+
+            _dotNetRef = DotNetObjectReference.Create(this);
+
+            _module = await _JS.InvokeAsync<IJSObjectReference>(
+                    "import", "./_content/BlazorComponents/CallDotnetInstance.js");
             
             // Start JS listener, passing the object reference
-            await _module.InvokeVoidAsync("startResizeListener", dotNetRef);
+            await _module.InvokeVoidAsync("startResizeListener", _dotNetRef);
         }
 
-        public async Task DisposeModuleAsync()
+        public async Task SubscribeToken(Action<int> handler)
+        {
+            WidthChanged += handler;
+            await this.ListenOnScreenChanges();
+            WidthChanged?.Invoke(_width);
+        }
+
+        public void UnsubscribeToken(Action<int> handler)
+        {
+            WidthChanged -= handler;
+        }
+
+        public async ValueTask DisposeAsync()
         {
             if (_module != null)
             {
