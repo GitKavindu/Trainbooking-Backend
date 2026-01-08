@@ -26,6 +26,14 @@ BlazorServer/obj
 BlazorComponents/bin
 BlazorComponents/obj
 
+#ignore bin and obj in wasm services
+WasmServices/bin
+WasmServices/obj
+
+#ignore bin and obj in BlazorWasm
+BlazorWasm/bin
+BlazorWasm/obj
+
 #ignore .vscode in Project
 .vscode/
 

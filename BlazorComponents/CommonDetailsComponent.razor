@@ -222,7 +222,7 @@
       if(firstRender)
       {
         await UpdateToken();
-        this.service._tokenService.SubscribeToken(HandleTokenChanged);
+        await this.service._tokenService.SubscribeToken(HandleTokenChanged);
       }
     }
 

@@ -1,0 +1,66 @@
+﻿@using BlazorComponents.Service
+@using Microsoft.AspNetCore.Components.Routing
+
+@inherits LayoutComponentBase
+
+<!-- Full-width Wrapper -->
+<div class="app-wrapper">
+
+    <!-- Full-width Header -->
+    <div class="container-fluid px-0">
+        <HeaderComponent/>
+    </div>
+
+    
+
+    <div class="main-con">
+        <img class="pos" src="./_content/BlazorComponents/gallery-4.jpg" alt="sdasds">
+
+        <!-- Responsive Main Content -->
+        @if(service.currentUrl=="/")
+            @Body
+        
+        <div class="container">
+            
+            <div class="row">
+                <div class="col-lg-9"></div>
+                <div class="col-lg-3 col-12">
+                    @if(service.showMessage==true)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show text-center" 
+                            role="alert" id="alert" @((MarkupString)service.messege)>             
+                        </div>
+                    }
+                    
+                </div>
+            </div>
+
+            @if(service.currentUrl!="/")
+                @Body
+
+            <CommonDetailsComponent/>
+        </div> 
+        
+    </div>
+
+    <!-- Full-width Footer -->
+    <div class="container-fluid px-0">
+        <FooterComponent/>
+    </div>
+
+</div>       
+        
+
+
+
+@code
+{
+
+    [Inject]
+    private SharedService service {get;set;}
+
+    [Inject]
+    private NavigationManager _navigation { get; set; }
+
+
+}

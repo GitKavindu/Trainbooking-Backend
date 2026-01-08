@@ -20,7 +20,7 @@ namespace BlazorComponents.Components.HomeComponent
             if(firstRender)
             {
                 await UpdateToken();
-                this.service._tokenService.SubscribeToken(HandleTokenChanged);
+                await this.service._tokenService.SubscribeToken(HandleTokenChanged);
                 await this.service.print("first admin is "+_token?.isAdmin.ToString());
             }
             else

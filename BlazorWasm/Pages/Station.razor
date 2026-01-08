@@ -1,0 +1,7 @@
+@page "/station"
+@using BlazorComponents.Components.StationComponent
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+
+@* <StationComponent @rendermode="InteractiveServer"/> *@
+
+<StationComponent @rendermode="@(new InteractiveWebAssemblyRenderMode(true))"/>

@@ -1,5 +1,9 @@
-@page "/station"
+@* @page "/station"
 @using BlazorComponents.Components.StationComponent
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
 @rendermode InteractiveServer
 
 <StationComponent/>
+
+
+<StationComponent @rendermode="@(new InteractiveWebAssemblyRenderMode(true))"/> *@

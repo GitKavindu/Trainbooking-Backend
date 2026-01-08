@@ -22,12 +22,15 @@ namespace BlazorComponents.Components.StationComponent
         private List<ReturnStationDto>? stationListWithoutFilter;
         private DeviceService _deviceService;
         private Action<int> _widthHandler;
+        private Action _tokenHandler;
         private NavigationService<ReturnStationDto> _navigationService;
 
         private SharedService service ;
         private IStationService _stationService;
 
         private int _screenWidth;
+
+        private ReturnTokenDto _token;
 
         private bool asc=true; //represents ascending order
         private bool station_id = false;
@@ -67,27 +70,35 @@ namespace BlazorComponents.Components.StationComponent
         protected override async Task OnInitializedAsync()
         {
             await this.RefreshStationList();
+            Console.WriteLine("Fiest State  "+ service._tokenService.ReturnXu().GetState().ToString());
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
+                 _token = await this.service._tokenService.ReturnToken();
+                
                 //Subscribe First
                 _widthHandler = OnScreenWidthChanged;
                 await _deviceService.SubscribeToken(_widthHandler);
+                await service._tokenService.SubscribeToken(OnTokenChanged);
 
-                //await this.RefreshStationList();
+                //_tokenHandler = OnTokenChanged;
                 
-            }
+                //await this.RefreshStationList();
 
-            await service.print(firstRender.ToString());
+            }
+            
+            await service.print("render state "+firstRender.ToString());
+
+            Console.WriteLine("State  "+ service._tokenService.ReturnXu().GetState().ToString());
         }
 
         public async Task Dispose()
         {
             _deviceService.UnsubscribeToken(_widthHandler);
-          
+            service._tokenService.UnsubscribeToken(OnTokenChanged);
         }
 
         private async void OnScreenWidthChanged(int width)
@@ -96,6 +107,14 @@ namespace BlazorComponents.Components.StationComponent
             await service.print("Screen width is "+width);
             StateHasChanged();
         }
+
+        private async void OnTokenChanged()
+        {
+            _token = await this.service._tokenService.ReturnToken();
+            await service.print("Token name is "+_token?.PreferedName);
+            StateHasChanged();
+        }
+
 
         private void addClick() 
         {

@@ -3,6 +3,7 @@ using Service;
 using Infrastructure;
 using Interfaces;
 using BlazorComponents.Service;
+using WasmServices;
 
 namespace BlazorServer
 {
@@ -32,7 +33,8 @@ namespace BlazorServer
             services.AddRazorComponents().AddInteractiveServerComponents(options =>
             {
                 options.DetailedErrors = true;
-            });
+            })
+            .AddInteractiveWebAssemblyComponents();
 
             //Infrastucture dependencies
             services.AddScoped<IDbConnectRepo>((c)=> new DbConnectRepo(_connectionString));
@@ -45,6 +47,7 @@ namespace BlazorServer
             services.AddScoped<IStationService,StationService>();
 
             //Blazor Component dependecies
+            services.AddScoped<Ixu>(c => new Xu(true));
             services.AddScoped<ITokenService,TokenService>();
             services.AddScoped<SharedService>();
             services.AddScoped<DeviceService>();
@@ -67,10 +70,12 @@ namespace BlazorServer
             app.UseAntiforgery();
 
             app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapRazorComponents<App>().AddInteractiveServerRenderMode();
-                
+            {                
                 endpoints.MapStaticAssets(); 
+
+                endpoints.MapRazorComponents<App>().AddInteractiveServerRenderMode().AddInteractiveWebAssemblyRenderMode()
+                    .AddAdditionalAssemblies(typeof(BlazorWasm.Program).Assembly);                
+                
             });
         }
     }

@@ -12,9 +12,12 @@ public class TokenService:ITokenService, IAsyncDisposable
 
     private event Action? OnChange;
 
-    public TokenService(IJSRuntime JS)
+    public Ixu _x;
+
+    public TokenService(IJSRuntime JS,Ixu x)
     {
         _JS = JS;
+        _x = x;
     }
     
     public async Task<ReturnTokenDto?> ReturnToken()
@@ -92,12 +95,13 @@ public class TokenService:ITokenService, IAsyncDisposable
     [JSInvokable]
     public void OnTokenChanged()
     {
+        Console.WriteLine("token changed ");
         OnChange?.Invoke();
     }
 
     private async Task EnsureJsSubscriptionAsync()
     {
-        if (_module != null)
+        if (_module != null || _dotNetRef!=null)
             return;
 
         _module = await _JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorComponents/app.js");
@@ -107,13 +111,15 @@ public class TokenService:ITokenService, IAsyncDisposable
         await _module.InvokeVoidAsync("subscribe", _dotNetRef);
     }
 
-    public void SubscribeToken(Action handler)
+    public async Task SubscribeToken(Action handler)
     {
+        await EnsureJsSubscriptionAsync();
         OnChange += handler;
     }
 
     public void UnsubscribeToken(Action handler)
     {
+        Console.WriteLine("delete now ");
         OnChange -= handler;
     }
 
@@ -127,6 +133,11 @@ public class TokenService:ITokenService, IAsyncDisposable
 
         _dotNetRef?.Dispose();
     }
+
+    public Ixu ReturnXu()
+    {
+        return _x;
+    }
     
 }
 
@@ -137,6 +148,27 @@ public interface ITokenService
     Task<ReturnTokenDto> SetToken(ReturnTokenDto token);
     Task<string> GetFromLocalStorage(string key);
     Task RemoveTokenAsync();
-    void SubscribeToken(Action handler);
+    Task SubscribeToken(Action handler);
     void UnsubscribeToken(Action handler);
+    Ixu ReturnXu();
+}
+
+public interface Ixu
+{
+    bool GetState();
+}
+
+public class Xu:Ixu
+{
+    private bool _State;
+
+    public Xu(bool State)
+    {
+        this._State = State;
+    }
+
+    public bool GetState()
+    {
+        return this._State;
+    }
 }
